@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<meta name="theme-color" content="#0b0f1a" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="PitStock" />
+<title>PitStock</title>
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj48cmVjdCB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgcng9IjQwIiBmaWxsPSIjMGIwZjFhIi8+PHRleHQgeD0iOTAiIHk9IjExNSIgZm9udC1zaXplPSI5MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmaWxsPSIjNWI4ZGVmIiBmb250LXdlaWdodD0iYm9sZCI+UDwvdGV4dD48L3N2Zz4=" />
+<style>
+  :root{
+    --bg:#0b0f1a; --bg2:#0e1424;
+    --ink:#f4f7ff; --muted:#9aa6c2; --faint:#6b7794;
+    --line:rgba(255,255,255,.10);
+    --accent:#5b8def; --accent2:#7c5cff; --good:#37d39a; --bad:#ff6b6b;
+    --glass:rgba(22,30,52,.55); --glass-brd:rgba(255,255,255,.14);
+    --field:#141b2e; --field-brd:rgba(255,255,255,.18);
+    --shadow:0 20px 50px -20px rgba(0,0,0,.7);
+    font-synthesis-weight:none;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    margin:0;color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:
+      radial-gradient(120% 90% at 15% -10%, rgba(41,58,102,.55) 0, transparent 55%),
+      radial-gradient(130% 100% at 100% 0%, rgba(124,92,255,.20) 0, transparent 45%),
+      radial-gradient(120% 120% at 50% 120%, rgba(91,141,239,.18) 0, transparent 50%),
+      linear-gradient(180deg,var(--bg),var(--bg2));
+    -webkit-font-smoothing:antialiased;
+    overscroll-behavior:none;
+  }
+  .wrap{max-width:520px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;
+    padding:max(20px,env(safe-area-inset-top)) 20px max(20px,env(safe-area-inset-bottom))}
+  .hidden{display:none!important}
+
+  /* ---------- Écran de connexion (écran qu'on remplit : sobre, contrasté) ---------- */
+  #login{flex:1;display:flex;flex-direction:column;justify-content:center;gap:26px}
+  .brand{display:flex;flex-direction:column;align-items:center;gap:14px;margin-bottom:6px}
+  .logo{width:88px;height:88px;border-radius:26px;display:grid;place-items:center;position:relative;
+    background:linear-gradient(150deg,#2a3350,#141a2c);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.25), var(--shadow);overflow:hidden}
+  .logo:before{content:"";position:absolute;inset:0;background:
+    linear-gradient(120deg,transparent 30%,rgba(255,255,255,.35) 48%,transparent 66%);
+    background-size:250% 250%;animation:sheen 4.5s ease-in-out infinite}
+  @keyframes sheen{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+  .logo span{font-size:46px;font-weight:800;background:linear-gradient(180deg,#eaf1ff,#8fb0ff);
+    -webkit-background-clip:text;background-clip:text;color:transparent;position:relative}
+  .brand h1{margin:0;font-size:26px;letter-spacing:.3px;font-weight:700}
+  .brand p{margin:0;color:var(--muted);font-size:14px}
+
+  .btn{width:100%;border:0;border-radius:16px;padding:17px 18px;font-size:17px;font-weight:650;
+    color:#fff;background:linear-gradient(180deg,var(--accent),#3f6fd6);cursor:pointer;
+    box-shadow:0 10px 26px -10px rgba(63,111,214,.9);transition:transform .12s ease,filter .12s ease;
+    display:flex;align-items:center;justify-content:center;gap:10px}
+  .btn:active{transform:scale(.985)}
+  .btn.secondary{background:var(--field);color:var(--ink);box-shadow:none;border:1px solid var(--field-brd);font-weight:600}
+  .btn:disabled{opacity:.55;cursor:default}
+  .btn svg{width:20px;height:20px}
+
+  .linkish{background:none;border:0;color:var(--muted);font-size:14px;padding:8px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+  .center{text-align:center}
+
+  .field{display:flex;flex-direction:column;gap:8px}
+  .field label{font-size:13px;color:var(--muted);padding-left:2px}
+  .field input{width:100%;background:var(--field);border:1px solid var(--field-brd);border-radius:14px;
+    padding:15px 16px;color:var(--ink);font-size:17px;outline:none;transition:border-color .12s}
+  .field input:focus{border-color:var(--accent)}
+  .otp input{letter-spacing:.5em;text-align:center;font-size:22px;font-weight:700}
+
+  .note{font-size:13px;color:var(--faint);text-align:center;line-height:1.5}
+  .msg{font-size:14px;text-align:center;padding:10px 12px;border-radius:12px;line-height:1.4}
+  .msg.err{background:rgba(255,107,107,.12);color:#ffb4b4;border:1px solid rgba(255,107,107,.3)}
+  .msg.ok{background:rgba(55,211,154,.12);color:#8ff0cf;border:1px solid rgba(55,211,154,.3)}
+
+  /* ---------- Tableau de bord (écran qu'on regarde : liquid glass) ---------- */
+  #app{flex:1;display:flex;flex-direction:column;gap:18px}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding-top:4px}
+  .topbar .who{display:flex;align-items:center;gap:10px}
+  .avatar{width:38px;height:38px;border-radius:12px;background:linear-gradient(150deg,var(--accent2),var(--accent));
+    display:grid;place-items:center;font-weight:700;font-size:15px}
+  .topbar .who b{display:block;font-size:15px}
+  .topbar .who small{color:var(--muted);font-size:12px}
+  .iconbtn{background:var(--glass);border:1px solid var(--glass-brd);border-radius:12px;color:var(--muted);
+    padding:9px 11px;font-size:13px;cursor:pointer;backdrop-filter:blur(12px)}
+
+  .hero{border-radius:22px;padding:20px;position:relative;overflow:hidden;
+    background:linear-gradient(155deg,rgba(91,141,239,.22),rgba(124,92,255,.14));
+    border:1px solid var(--glass-brd);box-shadow:var(--shadow)}
+  .hero .k{color:var(--muted);font-size:13px}
+  .hero .v{font-size:34px;font-weight:800;margin-top:4px;letter-spacing:.5px}
+  .hero .sub{color:var(--muted);font-size:13px;margin-top:6px}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .card{border-radius:18px;padding:15px 16px;background:var(--glass);border:1px solid var(--glass-brd);
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:var(--shadow)}
+  .card .k{color:var(--muted);font-size:12px;line-height:1.3}
+  .card .v{font-size:22px;font-weight:750;margin-top:6px}
+  .card .v.small{font-size:18px}
+  .pos{color:var(--good)} .neg{color:var(--bad)}
+
+  .jojo{border-radius:18px;padding:16px;background:var(--glass);border:1px solid var(--glass-brd);
+    backdrop-filter:blur(16px);display:flex;align-items:center;justify-content:space-between}
+  .jojo .k{color:var(--muted);font-size:13px}
+  .jojo .v{font-size:20px;font-weight:750;margin-top:3px}
+
+  .soon{border-radius:18px;padding:16px;border:1px dashed var(--line);color:var(--faint);font-size:13px;text-align:center;line-height:1.5}
+
+  .foot{color:var(--faint);font-size:11px;text-align:center;margin-top:auto;padding-top:14px}
+
+  .spinner{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,.35);
+    border-top-color:#fff;animation:spin .7s linear infinite;display:inline-block}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #boot{position:fixed;inset:0;display:grid;place-items:center;background:var(--bg)}
+</style>
+</head>
+<body>
+<div id="boot"><span class="spinner"></span></div>
+
+<div class="wrap hidden" id="root" data-ready="0">
+
+  <!-- ======= CONNEXION ======= -->
+  <section id="login" class="hidden">
+    <div class="brand">
+      <div class="logo"><span>P</span></div>
+      <h1>PitStock</h1>
+      <p>Ton stock, tes marges, ta caisse.</p>
+    </div>
+
+    <!-- Étape par défaut : Face ID -->
+    <div id="step-main" class="field" style="gap:14px">
+      <button class="btn" id="btn-passkey">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 11c2.2 0 4-1.8 4-4S14.2 3 12 3 8 4.8 8 7s1.8 4 4 4Z"/><path d="M4 21c0-3.5 3.6-6 8-6"/><path d="M17 15v3M20 15v3M17 21h3"/></svg>
+        Se connecter avec Face ID
+      </button>
+      <button class="linkish center" id="link-email">Première fois sur cet appareil ? Recevoir un code</button>
+    </div>
+
+    <!-- Étape : saisie email -->
+    <div id="step-email" class="field hidden">
+      <label for="email">Ton adresse email</label>
+      <input id="email" type="email" inputmode="email" autocomplete="email" placeholder="prenom@email.com" />
+      <button class="btn" id="btn-send">Recevoir mon code</button>
+      <button class="linkish center" id="back-1">Retour</button>
+    </div>
+
+    <!-- Étape : saisie code -->
+    <div id="step-otp" class="field otp hidden">
+      <label for="otp">Le code reçu par email</label>
+      <input id="otp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" />
+      <button class="btn" id="btn-verify">Valider</button>
+      <button class="linkish center" id="back-2">Changer d'email</button>
+    </div>
+
+    <div id="login-msg" class="msg hidden"></div>
+    <p class="note">Pas de mot de passe. Ton code n'est demandé qu'une fois par appareil ; ensuite c'est Face ID.</p>
+  </section>
+
+  <!-- ======= APP ======= -->
+  <section id="app" class="hidden">
+    <div class="topbar">
+      <div class="who">
+        <div class="avatar" id="ava">M</div>
+        <div><b>Bonjour</b><small id="whoami">—</small></div>
+      </div>
+      <button class="iconbtn" id="btn-logout">Déconnexion</button>
+    </div>
+
+    <div class="hero">
+      <div class="k">Résultat net (avec stock)</div>
+      <div class="v" id="kpi-gain-stock">—</div>
+      <div class="sub" id="kpi-gain-hors">Hors stock : —</div>
+    </div>
+
+    <div class="grid">
+      <div class="card"><div class="k">En stock — Max</div><div class="v" id="kpi-stock-max">—</div></div>
+      <div class="card"><div class="k">En stock — JM</div><div class="v" id="kpi-stock-jm">—</div></div>
+      <div class="card"><div class="k">Valeur de stock</div><div class="v small" id="kpi-valeur">—</div></div>
+      <div class="card"><div class="k">Résultat net Max</div><div class="v small" id="kpi-net">—</div></div>
+    </div>
+
+    <div class="jojo">
+      <div><div class="k">Position de Jojo</div><div class="v" id="kpi-jojo">—</div></div>
+      <div id="jojo-sense" class="k" style="text-align:right;max-width:45%"></div>
+    </div>
+
+    <div class="soon">Les écrans « Ajouter une voiture », « Enregistrer une vente » et « Régler Jojo » arrivent à la prochaine étape. Pour l'instant, la base est vide : tout est à zéro, c'est normal.</div>
+
+    <!-- invite d'activation Face ID (après 1re connexion par code) -->
+    <div id="passkey-invite" class="jojo hidden" style="border-color:rgba(91,141,239,.4)">
+      <div><div class="k" style="color:#bcd2ff">Activer Face ID sur cet appareil</div><div class="k">Une fois, pour ne plus jamais taper de code ici.</div></div>
+      <button class="iconbtn" id="btn-register" style="background:var(--accent);color:#fff;border:0">Activer</button>
+    </div>
+
+    <div class="foot" id="foot">PitStock — base <span id="foot-ref"></span></div>
+  </section>
+</div>
+
+<!-- Affichage immédiat de l'écran de connexion, sans attendre la librairie (ouverture < 2 s). -->
+<script>
+  (function(){
+    document.getElementById('boot').classList.add('hidden');
+    var root=document.getElementById('root'); root.classList.remove('hidden');
+    document.getElementById('login').classList.remove('hidden');
+    document.getElementById('step-main').classList.remove('hidden');
+    // Si la librairie n'a pas répondu au bout de 4 s, on prévient sans laisser tourner.
+    setTimeout(function(){
+      if(root.getAttribute('data-ready')==='1') return;
+      var m=document.getElementById('login-msg');
+      m.textContent='Connexion au serveur indisponible pour le moment. Vérifie ta connexion et réessaie.';
+      m.className='msg err'; m.classList.remove('hidden');
+    },4000);
+  })();
+</script>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.105.0'
+
+/* ---- Configuration (clé publique : sûre côté navigateur, la base est protégée par RLS) ---- */
+const SUPABASE_URL = 'https://mwajcjfqghvwmhvrbazr.supabase.co'
+const SUPABASE_KEY = 'sb_publishable_GBq5ggKtzNc2h_WHe9sjUQ_LdJzS7uW'
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { persistSession:true, autoRefreshToken:true, detectSessionInUrl:true, experimental:{ passkey:true } }
+})
+
+/* ---- petits utilitaires ---- */
+const $ = s => document.querySelector(s)
+const eur = n => (n==null?'—':(Number(n)).toLocaleString('fr-FR',{style:'currency',currency:'EUR'}))
+const show = (el,on=true)=>el.classList.toggle('hidden',!on)
+function msg(text,kind){ const m=$('#login-msg'); if(!text){show(m,false);return} m.textContent=text; m.className='msg '+(kind||''); show(m,true) }
+function busy(btn,on,label){ btn.disabled=on; btn.dataset.label=btn.dataset.label||btn.innerHTML;
+  btn.innerHTML = on ? '<span class="spinner"></span>' : btn.dataset.label }
+
+$('#foot-ref').textContent = SUPABASE_URL.split('//')[1].split('.')[0]
+
+/* ---- navigation entre écrans ---- */
+function view(v){ show($('#login'), v==='login'); show($('#app'), v==='app') }
+function loginStep(step){ ['main','email','otp'].forEach(s=>show($('#step-'+s), s===step)); msg('') }
+
+/* ---- démarrage : session déjà là ? ---- */
+async function boot(){
+  $('#root').setAttribute('data-ready','1')   // la librairie a répondu
+  msg('')
+  const { data:{ session } } = await supabase.auth.getSession()
+  show($('#boot'), false); show($('#root'), true)
+  if(session){ await enterApp(session) } else { view('login'); loginStep('main') }
+}
+
+supabase.auth.onAuthStateChange((_e, session)=>{ if(session) enterApp(session) })
+
+/* ================= CONNEXION ================= */
+
+// Face ID
+$('#btn-passkey').addEventListener('click', async ()=>{
+  busy($('#btn-passkey'), true)
+  try{
+    const { error } = await supabase.auth.signInWithPasskey()
+    if(error) throw error
+    // onAuthStateChange prend le relais
+  }catch(err){
+    busy($('#btn-passkey'), false)
+    msg("Pas encore de Face ID sur cet appareil. Reçois un code une première fois.", 'err')
+    loginStep('email')
+  }
+})
+
+$('#link-email').addEventListener('click', ()=>loginStep('email'))
+$('#back-1').addEventListener('click', ()=>loginStep('main'))
+$('#back-2').addEventListener('click', ()=>loginStep('email'))
+
+// envoi du code
+$('#btn-send').addEventListener('click', async ()=>{
+  const email = $('#email').value.trim()
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ msg("Adresse email invalide.",'err'); return }
+  busy($('#btn-send'), true)
+  const { error } = await supabase.auth.signInWithOtp({ email, options:{ shouldCreateUser:true } })
+  busy($('#btn-send'), false)
+  if(error){ msg(error.message,'err'); return }
+  window._email = email
+  loginStep('otp'); msg("Code envoyé à "+email,'ok'); $('#otp').focus()
+})
+
+// vérification du code
+$('#btn-verify').addEventListener('click', async ()=>{
+  const token = $('#otp').value.trim()
+  if(token.length<6){ msg("Entre les 6 chiffres.",'err'); return }
+  busy($('#btn-verify'), true)
+  const { data, error } = await supabase.auth.verifyOtp({ email: window._email, token, type:'email' })
+  busy($('#btn-verify'), false)
+  if(error){ msg("Code incorrect ou expiré.",'err'); return }
+  window._justOtp = true   // proposera d'activer Face ID
+})
+
+/* ================= APP ================= */
+async function enterApp(session){
+  view('app')
+  const email = session.user?.email || ''
+  $('#whoami').textContent = email
+  $('#ava').textContent = (email[0]||'M').toUpperCase()
+  // proposer Face ID si on vient d'un code et qu'aucun passkey n'est encore posé ici
+  show($('#passkey-invite'), !!window._justOtp)
+  await loadDashboard()
+}
+
+async function loadDashboard(){
+  const { data, error } = await supabase.from('v_tableau_de_bord').select('*').single()
+  if(error){ return }
+  const d = data || {}
+  const signed = (el,val)=>{ const n=Number(val||0); el.textContent=eur(n); el.className='v '+(n>0?'pos':n<0?'neg':'') }
+  const signedSmall = (el,val)=>{ const n=Number(val||0); el.textContent=eur(n); el.className='v small '+(n>0?'pos':n<0?'neg':'') }
+  signed($('#kpi-gain-stock'), d.gain_avec_stock)
+  $('#kpi-gain-hors').textContent = 'Hors stock : '+eur(d.gain_hors_stock)
+  $('#kpi-stock-max').textContent = (d.stock_max??0)+' voiture'+((d.stock_max||0)>1?'s':'')
+  $('#kpi-stock-jm').textContent  = (d.stock_jm??0)+' voiture'+((d.stock_jm||0)>1?'s':'')
+  $('#kpi-valeur').textContent = eur(d.valeur_stock)
+  signedSmall($('#kpi-net'), d.resultat_net_max)
+  const j = Number(d.solde_jojo||0)
+  $('#kpi-jojo').textContent = eur(Math.abs(j))
+  $('#jojo-sense').textContent = j>0 ? 'Tu dois ça à Jojo' : j<0 ? 'Jojo te doit ça' : 'À jour'
+  $('#kpi-jojo').className = 'v '+(j>0?'neg':j<0?'pos':'')
+}
+
+// activer Face ID
+$('#btn-register').addEventListener('click', async ()=>{
+  const b=$('#btn-register'); b.disabled=true; b.textContent='…'
+  try{
+    const { error } = await supabase.auth.registerPasskey()
+    if(error) throw error
+    show($('#passkey-invite'), false); window._justOtp=false
+  }catch(err){
+    b.disabled=false; b.textContent='Réessayer'
+  }
+})
+
+// déconnexion
+$('#btn-logout').addEventListener('click', async ()=>{
+  await supabase.auth.signOut(); window._justOtp=false
+  view('login'); loginStep('main')
+})
+
+boot()
+</script>
+</body>
+</html>

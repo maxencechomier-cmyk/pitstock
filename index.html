@@ -136,26 +136,21 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 11c2.2 0 4-1.8 4-4S14.2 3 12 3 8 4.8 8 7s1.8 4 4 4Z"/><path d="M4 21c0-3.5 3.6-6 8-6"/><path d="M17 15v3M20 15v3M17 21h3"/></svg>
         Se connecter avec Face ID
       </button>
-      <button class="linkish center" id="link-email">Première fois ou nouvel appareil ? Recevoir un lien</button>
+      <button class="linkish center" id="link-pw">Utiliser mon mot de passe</button>
     </div>
 
-    <!-- Étape : saisie email -->
-    <div id="step-email" class="field hidden">
+    <!-- Étape : email + mot de passe (1re fois par appareil, et secours) -->
+    <div id="step-password" class="field hidden">
       <label for="email">Ton adresse email</label>
-      <input id="email" type="email" inputmode="email" autocomplete="email" placeholder="prenom@email.com" />
-      <button class="btn" id="btn-send">Recevoir mon lien de connexion</button>
+      <input id="email" type="email" inputmode="email" autocomplete="username" placeholder="prenom@email.com" />
+      <label for="pw" style="margin-top:8px">Ton mot de passe</label>
+      <input id="pw" type="password" autocomplete="current-password" placeholder="au moins 6 caractères" />
+      <button class="btn" id="btn-pw">Entrer</button>
       <button class="linkish center" id="back-1">Retour</button>
     </div>
 
-    <!-- Étape : email envoyé -->
-    <div id="step-sent" class="field hidden">
-      <div class="msg ok" id="sent-msg" style="line-height:1.5"></div>
-      <p class="note">Ouvre l'email <b>sur cet appareil</b> et clique sur « Se connecter ». Tu reviendras ici connecté, sans rien retaper. Pense à regarder tes spams.</p>
-      <button class="linkish center" id="back-2">Changer d'email</button>
-    </div>
-
     <div id="login-msg" class="msg hidden"></div>
-    <p class="note">Pas de mot de passe. Le lien n'est demandé qu'une fois par appareil ; ensuite c'est Face ID.</p>
+    <p class="note">La première fois sur un appareil : email + mot de passe. Ensuite, c'est Face ID — plus rien à taper.</p>
   </section>
 
   <!-- ======= APP ======= -->
@@ -238,7 +233,8 @@ $('#foot-ref').textContent = SUPABASE_URL.split('//')[1].split('.')[0]
 
 /* ---- navigation entre écrans ---- */
 function view(v){ show($('#login'), v==='login'); show($('#app'), v==='app') }
-function loginStep(step){ ['main','email','sent'].forEach(s=>show($('#step-'+s), s===step)); msg('') }
+function loginStep(step){ ['main','password'].forEach(s=>show($('#step-'+s), s===step)); msg('') }
+const pkDone = ()=>{ try{ return localStorage.getItem('pk_done')==='1' }catch(e){ return false } }
 
 /* ---- démarrage : session déjà là ? ---- */
 async function boot(){
@@ -246,7 +242,7 @@ async function boot(){
   msg('')
   const { data:{ session } } = await supabase.auth.getSession()
   show($('#boot'), false); show($('#root'), true)
-  if(session){ await enterApp(session) } else { view('login'); loginStep('main') }
+  if(session){ await enterApp(session) } else { view('login'); loginStep(pkDone() ? 'main' : 'password') }
 }
 
 supabase.auth.onAuthStateChange((_e, session)=>{ if(session) enterApp(session) })
@@ -262,25 +258,33 @@ $('#btn-passkey').addEventListener('click', async ()=>{
     // onAuthStateChange prend le relais
   }catch(err){
     busy($('#btn-passkey'), false)
-    msg("Pas encore de Face ID sur cet appareil. Reçois un lien une première fois.", 'err')
-    loginStep('email')
+    msg("Face ID pas encore configuré sur cet appareil. Entre ton mot de passe une première fois.", 'err')
+    loginStep('password')
   }
 })
 
-$('#link-email').addEventListener('click', ()=>loginStep('email'))
+$('#link-pw').addEventListener('click', ()=>loginStep('password'))
 $('#back-1').addEventListener('click', ()=>loginStep('main'))
-$('#back-2').addEventListener('click', ()=>loginStep('email'))
 
-// envoi du code
-$('#btn-send').addEventListener('click', async ()=>{
+// connexion / création par mot de passe (amorçage sans email)
+$('#btn-pw').addEventListener('click', async ()=>{
   const email = $('#email').value.trim()
+  const pw = $('#pw').value
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ msg("Adresse email invalide.",'err'); return }
-  busy($('#btn-send'), true)
-  const { error } = await supabase.auth.signInWithOtp({ email, options:{ shouldCreateUser:true, emailRedirectTo: window.location.origin } })
-  busy($('#btn-send'), false)
-  if(error){ msg(error.message,'err'); return }
-  $('#sent-msg').textContent = "📧 Email envoyé à "+email
-  loginStep('sent')
+  if(pw.length<6){ msg("Mot de passe : au moins 6 caractères.",'err'); return }
+  busy($('#btn-pw'), true)
+  let { error } = await supabase.auth.signInWithPassword({ email, password: pw })
+  if(error){
+    // pas encore de compte sur ce projet → on le crée
+    const up = await supabase.auth.signUp({ email, password: pw })
+    if(up.error){ busy($('#btn-pw'), false); msg(up.error.message, 'err'); return }
+    if(!up.data.session){
+      const re = await supabase.auth.signInWithPassword({ email, password: pw })
+      if(re.error){ busy($('#btn-pw'), false); msg("Mot de passe incorrect pour ce compte.", 'err'); return }
+    }
+  }
+  busy($('#btn-pw'), false)
+  // onAuthStateChange → enterApp
 })
 
 /* ================= APP ================= */
@@ -290,8 +294,7 @@ async function enterApp(session){
   $('#whoami').textContent = email
   $('#ava').textContent = (email[0]||'M').toUpperCase()
   // proposer Face ID tant qu'aucun passkey n'a été activé sur cet appareil
-  const pkDone = (()=>{ try{ return localStorage.getItem('pk_done')==='1' }catch(e){ return false } })()
-  show($('#passkey-invite'), !pkDone)
+  show($('#passkey-invite'), !pkDone())
   await loadDashboard()
 }
 
@@ -329,7 +332,7 @@ $('#btn-register').addEventListener('click', async ()=>{
 // déconnexion
 $('#btn-logout').addEventListener('click', async ()=>{
   await supabase.auth.signOut()
-  view('login'); loginStep('main')
+  view('login'); loginStep(pkDone() ? 'main' : 'password')
 })
 
 boot()

@@ -115,6 +115,78 @@
     border-top-color:#fff;animation:spin .7s linear infinite;display:inline-block}
   @keyframes spin{to{transform:rotate(360deg)}}
   #boot{position:fixed;inset:0;display:grid;place-items:center;background:var(--bg)}
+
+  /* ---------- Shell à onglets ---------- */
+  #app{position:fixed;inset:0;display:flex;flex-direction:column;gap:0}
+  .statusbar{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:max(10px,env(safe-area-inset-top)) 16px 10px;background:var(--glass);border-bottom:1px solid var(--line);
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);z-index:5}
+  .sbstats{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+  .sbstat{display:flex;flex-direction:column;min-width:0}
+  .sbstat span{font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:.5px}
+  .sbstat b{font-size:15px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sbsep{width:1px;height:22px;background:var(--line);flex:none}
+  .gear{background:none;border:0;color:var(--muted);padding:6px;cursor:pointer;flex:none}
+  .gear svg{width:22px;height:22px;display:block}
+
+  .content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 16px 100px;width:100%;max-width:520px;margin:0 auto}
+  .panel{display:flex;flex-direction:column;gap:16px}
+  .paneltitle{font-size:22px;font-weight:800;letter-spacing:.3px;margin:2px 0}
+  .hello{font-size:16px;color:var(--muted)} .hello b{color:var(--ink)}
+  .btn.big{padding:20px 18px;font-size:18px}
+  .list{display:flex;flex-direction:column;gap:10px}
+  .empty{color:var(--faint);text-align:center;font-size:14px;line-height:1.6;padding:34px 12px;border:1px dashed var(--line);border-radius:16px}
+  .row{background:var(--glass);border:1px solid var(--glass-brd);border-radius:14px;padding:13px 15px;
+    display:flex;justify-content:space-between;align-items:center;gap:10px;backdrop-filter:blur(12px)}
+  .row .l b{font-weight:650} .row .l small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+  .row .r{text-align:right;font-weight:700;white-space:nowrap}
+
+  .tabbar{position:fixed;left:0;right:0;bottom:0;display:flex;align-items:flex-end;justify-content:space-around;
+    padding:8px 6px max(8px,env(safe-area-inset-bottom));background:var(--glass);border-top:1px solid var(--line);
+    backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);z-index:6}
+  .tab{flex:1;background:none;border:0;color:var(--faint);display:flex;flex-direction:column;align-items:center;gap:3px;
+    font-size:10px;font-weight:600;cursor:pointer;padding:4px 2px}
+  .tab svg{width:24px;height:24px;display:block}
+  .tab.on{color:var(--accent)}
+  .tab.center{transform:translateY(-8px);color:var(--muted)}
+  .tab.center.on{color:var(--accent)}
+  .cbadge{width:52px;height:52px;border-radius:50%;background:linear-gradient(180deg,var(--accent),#3f6fd6);
+    display:grid;place-items:center;box-shadow:0 8px 20px -6px rgba(63,111,214,.9);margin-bottom:2px}
+  .cbadge svg{width:26px;height:26px;stroke:#fff}
+
+  .sheet{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;z-index:20;
+    backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+  .sheetcard{background:var(--bg2);border:1px solid var(--glass-brd);border-radius:22px 22px 0 0;width:100%;max-width:520px;margin:0 auto;
+    padding:22px 20px max(22px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px}
+  .sheetcard .who{display:flex;align-items:center;gap:12px;margin-bottom:4px}
+  .sheetcard .foot{margin:2px 0 0}
+
+  /* ---------- Écran d'ajout (saisie : sobre, contraste maxi) ---------- */
+  #add{flex:1;display:flex;flex-direction:column;gap:16px;padding-bottom:20px}
+  .addbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:2px}
+  .addbar b{font-size:17px}
+  .q{font-size:16px;font-weight:600;color:var(--ink);margin:2px 0}
+  .bigchoice{width:100%;text-align:left;border:1px solid var(--field-brd);background:var(--field);color:var(--ink);
+    border-radius:16px;padding:16px 18px;font-size:17px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;gap:4px}
+  .bigchoice small{font-weight:400;color:var(--muted);font-size:13px}
+  .bigchoice:active{transform:scale(.99)}
+  .seg{display:flex;flex-wrap:wrap;gap:8px}
+  .segbtn{flex:1;min-width:calc(33% - 8px);border:1px solid var(--field-brd);background:var(--field);color:var(--muted);
+    border-radius:12px;padding:12px 10px;font-size:14px;font-weight:600;cursor:pointer;text-align:center}
+  .segbtn.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .results{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+  .result{border:1px solid var(--field-brd);background:var(--field);border-radius:12px;padding:11px 14px;cursor:pointer;
+    display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .result b{font-weight:600} .result small{color:var(--muted);font-size:12px}
+  .result.new{border-style:dashed;color:var(--accent);justify-content:flex-start;gap:6px}
+  .chosen{border:1px solid var(--accent);background:rgba(91,141,239,.12);border-radius:12px;padding:11px 14px;
+    display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .chosen small{color:var(--muted);font-size:12px;display:block}
+  .payer{font-size:14px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .payer b{color:var(--ink)}
+  .flash{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--good);color:#04110b;
+    font-weight:700;padding:12px 20px;border-radius:14px;box-shadow:var(--shadow);z-index:50;opacity:0;pointer-events:none;transition:opacity .25s}
+  .flash.on{opacity:1}
 </style>
 </head>
 <body>
@@ -153,44 +225,217 @@
     <p class="note">La première fois sur un appareil : email + mot de passe. Ensuite, c'est Face ID — plus rien à taper.</p>
   </section>
 
-  <!-- ======= APP ======= -->
+  <!-- ======= APP — SHELL À ONGLETS ======= -->
   <section id="app" class="hidden">
-    <div class="topbar">
-      <div class="who">
-        <div class="avatar" id="ava">M</div>
-        <div><b>Bonjour</b><small id="whoami">—</small></div>
+
+    <!-- Barre du haut : 3 chiffres persistants + compte -->
+    <header class="statusbar">
+      <div class="sbstats">
+        <div class="sbstat"><span>Résultat</span><b id="sb-res">—</b></div>
+        <div class="sbsep"></div>
+        <div class="sbstat"><span>Stock</span><b id="sb-stock">—</b></div>
+        <div class="sbsep"></div>
+        <div class="sbstat"><span>Jojo</span><b id="sb-jojo">—</b></div>
       </div>
-      <button class="iconbtn" id="btn-logout">Déconnexion</button>
+      <button class="gear" id="btn-account" aria-label="Compte">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-2.7-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.1-2.7l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 2.7-1.1V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></svg>
+      </button>
+    </header>
+
+    <!-- Contenu : 5 panneaux -->
+    <main class="content">
+
+      <!-- ACCUEIL -->
+      <div class="panel" id="tab-accueil">
+        <div class="hello">Bonjour <b id="whoami2">👋</b></div>
+        <div class="hero">
+          <div class="k">Résultat net (avec stock)</div>
+          <div class="v" id="kpi-gain-stock">—</div>
+          <div class="sub" id="kpi-gain-hors">Hors stock : —</div>
+        </div>
+        <button class="btn big" id="btn-add">＋ Ajouter une voiture ou une vente</button>
+        <div class="grid">
+          <div class="card"><div class="k">En stock — Max</div><div class="v" id="kpi-stock-max">—</div></div>
+          <div class="card"><div class="k">En stock — JM</div><div class="v" id="kpi-stock-jm">—</div></div>
+        </div>
+        <div id="passkey-invite" class="jojo hidden" style="border-color:rgba(91,141,239,.4)">
+          <div><div class="k" style="color:#bcd2ff">Activer Face ID sur cet appareil</div><div class="k">Une fois, pour te connecter d'un regard.</div></div>
+          <button class="iconbtn" id="btn-register" style="background:var(--accent);color:#fff;border:0">Activer</button>
+        </div>
+      </div>
+
+      <!-- STOCK -->
+      <div class="panel hidden" id="tab-stock">
+        <div class="paneltitle">Stock</div>
+        <div id="stock-list" class="list"></div>
+        <div id="stock-empty" class="empty hidden">Aucune voiture en stock.<br>Touche l'onglet ➕ pour en ajouter une.</div>
+      </div>
+
+      <!-- VENTES -->
+      <div class="panel hidden" id="tab-ventes">
+        <div class="paneltitle">Ventes</div>
+        <div id="ventes-list" class="list"></div>
+        <div id="ventes-empty" class="empty hidden">Aucune vente enregistrée pour l'instant.</div>
+      </div>
+
+      <!-- BILAN -->
+      <div class="panel hidden" id="tab-bilan">
+        <div class="paneltitle">Bilan</div>
+        <div class="grid">
+          <div class="card"><div class="k">Valeur de stock</div><div class="v small" id="kpi-valeur">—</div></div>
+          <div class="card"><div class="k">Résultat net Max</div><div class="v small" id="kpi-net">—</div></div>
+        </div>
+        <div class="soon">Le détail par caisse (Max / JM) et tes records apparaîtront ici dès qu'il y aura des ventes.</div>
+      </div>
+
+      <!-- JOJO -->
+      <div class="panel hidden" id="tab-jojo">
+        <div class="paneltitle">Compte de Jojo</div>
+        <div class="hero" style="text-align:center">
+          <div class="k">Position</div>
+          <div class="v" id="kpi-jojo">—</div>
+          <div class="sub" id="jojo-sense">—</div>
+        </div>
+        <div id="jojo-moves" class="list"></div>
+        <div id="jojo-empty" class="empty hidden">Aucun mouvement. L'ardoise est vierge.</div>
+        <button class="btn secondary" id="btn-regler">Régler Jojo — bientôt</button>
+      </div>
+
+    </main>
+
+    <!-- Barre du bas : 5 onglets (centre = Accueil) -->
+    <nav class="tabbar">
+      <button class="tab" data-tab="stock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 8l-9-5-9 5 9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg><span>Stock</span></button>
+      <button class="tab" data-tab="ventes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.6 13.4 12 22l-9-9V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.3"/></svg><span>Ventes</span></button>
+      <button class="tab center" data-tab="accueil"><span class="cbadge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></span><span>Accueil</span></button>
+      <button class="tab" data-tab="bilan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Bilan</span></button>
+      <button class="tab" data-tab="jojo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span>Jojo</span></button>
+    </nav>
+
+    <!-- Feuille « compte » -->
+    <div id="account-sheet" class="sheet hidden">
+      <div class="sheetcard">
+        <div class="who"><div class="avatar" id="ava">M</div><div><b>Connecté</b><small id="whoami">—</small></div></div>
+        <button class="btn secondary" id="btn-register2">Activer Face ID sur cet appareil</button>
+        <button class="btn secondary" id="btn-logout">Déconnexion</button>
+        <div class="foot" id="foot">PitStock — base <span id="foot-ref"></span></div>
+        <button class="linkish center" id="account-close">Fermer</button>
+      </div>
     </div>
-
-    <div class="hero">
-      <div class="k">Résultat net (avec stock)</div>
-      <div class="v" id="kpi-gain-stock">—</div>
-      <div class="sub" id="kpi-gain-hors">Hors stock : —</div>
-    </div>
-
-    <div class="grid">
-      <div class="card"><div class="k">En stock — Max</div><div class="v" id="kpi-stock-max">—</div></div>
-      <div class="card"><div class="k">En stock — JM</div><div class="v" id="kpi-stock-jm">—</div></div>
-      <div class="card"><div class="k">Valeur de stock</div><div class="v small" id="kpi-valeur">—</div></div>
-      <div class="card"><div class="k">Résultat net Max</div><div class="v small" id="kpi-net">—</div></div>
-    </div>
-
-    <div class="jojo">
-      <div><div class="k">Position de Jojo</div><div class="v" id="kpi-jojo">—</div></div>
-      <div id="jojo-sense" class="k" style="text-align:right;max-width:45%"></div>
-    </div>
-
-    <div class="soon">Les écrans « Ajouter une voiture », « Enregistrer une vente » et « Régler Jojo » arrivent à la prochaine étape. Pour l'instant, la base est vide : tout est à zéro, c'est normal.</div>
-
-    <!-- invite d'activation Face ID (après 1re connexion par code) -->
-    <div id="passkey-invite" class="jojo hidden" style="border-color:rgba(91,141,239,.4)">
-      <div><div class="k" style="color:#bcd2ff">Activer Face ID sur cet appareil</div><div class="k">Une fois, pour ne plus jamais taper de code ici.</div></div>
-      <button class="iconbtn" id="btn-register" style="background:var(--accent);color:#fff;border:0">Activer</button>
-    </div>
-
-    <div class="foot" id="foot">PitStock — base <span id="foot-ref"></span></div>
   </section>
+
+  <!-- ======= AJOUTER UNE VOITURE ======= -->
+  <section id="add" class="hidden">
+    <div class="addbar">
+      <button class="iconbtn" id="add-close">← Retour</button>
+      <b>Ajouter une voiture</b>
+      <span style="width:64px"></span>
+    </div>
+
+    <!-- Étape 0 : lot ou voiture seule -->
+    <div id="add-kind" class="field" style="gap:12px">
+      <div class="q">C'est un lot ou une voiture seule ?</div>
+      <button class="bigchoice" id="kind-single">🚗 Une voiture seule<small>Tu as choisi la pièce, son prix est connu</small></button>
+      <button class="bigchoice" id="kind-lot">📦 Un lot<small>Un paquet « tout ou rien » à répartir</small></button>
+    </div>
+
+    <!-- Lot : à venir -->
+    <div id="add-lot" class="field hidden" style="gap:14px">
+      <div class="soon">La répartition d'un lot (partager le prix payé sur chaque voiture) arrive à la prochaine étape. En attendant, tu peux entrer les voitures d'un lot une par une en « voiture seule ».</div>
+      <button class="btn secondary" id="lot-back">Retour</button>
+    </div>
+
+    <!-- Voiture seule : formulaire -->
+    <div id="add-single" class="field hidden" style="gap:16px">
+
+      <!-- Référence -->
+      <div class="field">
+        <label>Modèle ou référence</label>
+        <input id="f-ref" type="text" autocomplete="off" placeholder="Ferrari, 76914, McLaren…" />
+        <div id="ref-results" class="results"></div>
+        <div id="ref-chosen" class="chosen hidden">
+          <div><b id="chosen-nom"></b><small id="chosen-ref"></small></div>
+          <button class="linkish" id="chosen-clear">changer</button>
+        </div>
+      </div>
+
+      <!-- Nouvelle référence (si pas trouvée) -->
+      <div id="ref-new" class="field hidden" style="gap:10px;border:1px dashed var(--field-brd);border-radius:14px;padding:14px">
+        <div class="q" style="font-size:14px">Nouvelle référence — on l'ajoute au catalogue</div>
+        <label>Nom du set</label>
+        <input id="nf-nom" type="text" placeholder="Ferrari 812 Competizione" />
+        <label style="margin-top:4px">Marque</label>
+        <input id="nf-marque" type="text" placeholder="Ferrari, Porsche, McLaren…" />
+        <label style="margin-top:4px">Référence LEGO (5 chiffres, si tu l'as)</label>
+        <input id="nf-ref" type="text" inputmode="numeric" placeholder="ex. 76914 — laisse vide si tu ne l'as pas" />
+        <div class="payer" style="margin-top:4px">Minifigurine iconique (Fast &amp; Furious, James Bond…) ?
+          <div class="seg" id="nf-iconique" style="flex:1;min-width:160px">
+            <button class="segbtn" data-v="non">Non</button>
+            <button class="segbtn" data-v="oui">Oui</button>
+          </div>
+        </div>
+        <button class="btn secondary" id="nf-validate">Utiliser cette référence</button>
+      </div>
+
+      <!-- État -->
+      <div class="field">
+        <label>État</label>
+        <div class="seg" id="f-etat">
+          <button class="segbtn" data-v="neuf_scelle">Neuf scellé</button>
+          <button class="segbtn" data-v="notice_boite">Notice + boîte</button>
+          <button class="segbtn" data-v="notice_seule">Notice seule</button>
+          <button class="segbtn" data-v="nu">Nu</button>
+          <button class="segbtn" data-v="incomplet">Incomplet</button>
+        </div>
+      </div>
+
+      <!-- Minifigurine -->
+      <div class="field">
+        <label>Minifigurine présente ?</label>
+        <div class="seg" id="f-minifig">
+          <button class="segbtn" data-v="non">Absente</button>
+          <button class="segbtn" data-v="oui">Présente</button>
+        </div>
+      </div>
+
+      <!-- Prix payé -->
+      <div class="field">
+        <label>Prix payé, port compris (€)</label>
+        <input id="f-prix" type="number" inputmode="decimal" step="0.01" min="0" placeholder="ex. 15.00" />
+      </div>
+
+      <!-- Propriétaire -->
+      <div class="field">
+        <label>À qui est la voiture ?</label>
+        <div class="seg" id="f-prop">
+          <button class="segbtn" data-v="max">Max</button>
+          <button class="segbtn" data-v="jm">JM (commun)</button>
+          <button class="segbtn" data-v="jojo">Jojo</button>
+        </div>
+      </div>
+
+      <!-- Payeur (déduit, modifiable) -->
+      <div class="payer">Payé par : <b id="payer-label">Max</b>
+        <button class="linkish" id="payer-edit">modifier</button>
+      </div>
+      <div class="seg hidden" id="f-payer">
+        <button class="segbtn" data-v="max">Max</button>
+        <button class="segbtn" data-v="jojo">Jojo</button>
+        <button class="segbtn" data-v="50-50">50-50</button>
+      </div>
+
+      <!-- Note -->
+      <div class="field">
+        <label>Note (optionnel)</label>
+        <input id="f-note" type="text" placeholder="rayure, autocollant manquant, boîte pliée…" />
+      </div>
+
+      <div id="add-msg" class="msg hidden"></div>
+      <button class="btn" id="f-save">Enregistrer la voiture</button>
+    </div>
+  </section>
+
+  <div class="flash" id="flash"></div>
 </div>
 
 <!-- Affichage immédiat de l'écran de connexion, sans attendre la librairie (ouverture < 2 s). -->
@@ -232,7 +477,7 @@ function busy(btn,on,label){ btn.disabled=on; btn.dataset.label=btn.dataset.labe
 $('#foot-ref').textContent = SUPABASE_URL.split('//')[1].split('.')[0]
 
 /* ---- navigation entre écrans ---- */
-function view(v){ show($('#login'), v==='login'); show($('#app'), v==='app') }
+function view(v){ show($('#login'), v==='login'); show($('#app'), v==='app'); show($('#add'), v==='add') }
 function loginStep(step){ ['main','password'].forEach(s=>show($('#step-'+s), s===step)); msg('') }
 const pkDone = ()=>{ try{ return localStorage.getItem('pk_done')==='1' }catch(e){ return false } }
 
@@ -287,52 +532,211 @@ $('#btn-pw').addEventListener('click', async ()=>{
   // onAuthStateChange → enterApp
 })
 
-/* ================= APP ================= */
+/* ================= APP — SHELL À ONGLETS ================= */
+const TABS = ['accueil','stock','ventes','bilan','jojo']
+const ETAT_LABEL = { neuf_scelle:'Neuf scellé', notice_boite:'Notice + boîte', notice_seule:'Notice seule', nu:'Nu', incomplet:'Incomplet' }
+const PROP_LABEL = { max:'Max', jm:'JM', jojo:'Jojo' }
+const MVT_LABEL = { apport:'Apport de Jojo', avance_part_jm:'Avance de Max (part JM)', avance_achat_jojo:'Avance de Max (voiture Jojo)', part_resultat:'Part de résultat', encaissement_direct:'Encaissé par Jojo', pret_personnel:'Prêt personnel', reglement:'Règlement' }
+
 async function enterApp(session){
   view('app')
   const email = session.user?.email || ''
   $('#whoami').textContent = email
+  $('#whoami2').textContent = (email.split('@')[0] || '')
   $('#ava').textContent = (email[0]||'M').toUpperCase()
-  // proposer Face ID tant qu'aucun passkey n'a été activé sur cet appareil
   show($('#passkey-invite'), !pkDone())
-  await loadDashboard()
+  switchTab('accueil')
+  await refreshAll()
 }
+
+function switchTab(name){
+  TABS.forEach(t=>show($('#tab-'+t), t===name))
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on', b.dataset.tab===name))
+  const c=$('.content'); if(c) c.scrollTop=0
+  if(name==='stock') loadStock()
+  if(name==='ventes') loadVentes()
+  if(name==='jojo') loadJojo()
+}
+document.querySelectorAll('.tab').forEach(b=> b.addEventListener('click', ()=>switchTab(b.dataset.tab)) )
+
+async function refreshAll(){ await loadDashboard(); await Promise.all([loadStock(), loadVentes(), loadJojo()]) }
 
 async function loadDashboard(){
   const { data, error } = await supabase.from('v_tableau_de_bord').select('*').single()
   if(error){ return }
   const d = data || {}
-  const signed = (el,val)=>{ const n=Number(val||0); el.textContent=eur(n); el.className='v '+(n>0?'pos':n<0?'neg':'') }
-  const signedSmall = (el,val)=>{ const n=Number(val||0); el.textContent=eur(n); el.className='v small '+(n>0?'pos':n<0?'neg':'') }
+  const signed = (el,val,small)=>{ const n=Number(val||0); el.textContent=eur(n); el.className='v '+(small?'small ':'')+(n>0?'pos':n<0?'neg':'') }
   signed($('#kpi-gain-stock'), d.gain_avec_stock)
   $('#kpi-gain-hors').textContent = 'Hors stock : '+eur(d.gain_hors_stock)
   $('#kpi-stock-max').textContent = (d.stock_max??0)+' voiture'+((d.stock_max||0)>1?'s':'')
   $('#kpi-stock-jm').textContent  = (d.stock_jm??0)+' voiture'+((d.stock_jm||0)>1?'s':'')
   $('#kpi-valeur').textContent = eur(d.valeur_stock)
-  signedSmall($('#kpi-net'), d.resultat_net_max)
+  signed($('#kpi-net'), d.resultat_net_max, true)
   const j = Number(d.solde_jojo||0)
-  $('#kpi-jojo').textContent = eur(Math.abs(j))
+  $('#kpi-jojo').textContent = eur(Math.abs(j)); $('#kpi-jojo').className = 'v '+(j>0?'neg':j<0?'pos':'')
   $('#jojo-sense').textContent = j>0 ? 'Tu dois ça à Jojo' : j<0 ? 'Jojo te doit ça' : 'À jour'
-  $('#kpi-jojo').className = 'v '+(j>0?'neg':j<0?'pos':'')
+  // barre du haut (persistante)
+  $('#sb-res').textContent = eur(d.gain_avec_stock)
+  $('#sb-stock').textContent = eur(d.valeur_stock)
+  $('#sb-jojo').textContent = (j===0?'à jour':(j>0?'+':'')+eur(j))
 }
 
-// activer Face ID
-$('#btn-register').addEventListener('click', async ()=>{
-  const b=$('#btn-register'); b.disabled=true; b.textContent='…'
+async function loadStock(){
+  const { data } = await supabase.from('v_stock').select('*').order('date_entree',{ascending:false})
+  const rows=data||[]; const box=$('#stock-list'); box.innerHTML=''; show($('#stock-empty'), rows.length===0)
+  rows.forEach(a=>{
+    const el=document.createElement('div'); el.className='row'
+    el.innerHTML='<div class="l"><b>'+esc(a.nom||a.ref)+'</b><small>'+ETAT_LABEL[a.etat]+(a.minifig?' · minifig':'')+' · '+PROP_LABEL[a.proprietaire]+'</small></div>'
+      +'<div class="r">'+eur(a.cout_achat)+'</div>'
+    box.appendChild(el)
+  })
+}
+async function loadVentes(){
+  const { data } = await supabase.from('v_ventes_detail').select('*').order('date_vente',{ascending:false})
+  const rows=data||[]; const box=$('#ventes-list'); box.innerHTML=''; show($('#ventes-empty'), rows.length===0)
+  rows.forEach(v=>{
+    const m=Number(v.marge_reelle||0); const el=document.createElement('div'); el.className='row'
+    el.innerHTML='<div class="l"><b>'+esc(v.nom||v.ref)+'</b><small>'+(v.date_vente||'')+'</small></div>'
+      +'<div class="r">'+eur(v.montant_encaisse)+'<small style="font-weight:600;color:'+(m>=0?'var(--good)':'var(--bad)')+'">marge '+eur(m)+'</small></div>'
+    box.appendChild(el)
+  })
+}
+async function loadJojo(){
+  const { data } = await supabase.from('compte_courant_jojo').select('*').order('date_mouvement',{ascending:false}).order('id',{ascending:false})
+  const rows=data||[]; const box=$('#jojo-moves'); box.innerHTML=''; show($('#jojo-empty'), rows.length===0)
+  rows.forEach(m=>{
+    const v=Number(m.montant||0); const el=document.createElement('div'); el.className='row'
+    el.innerHTML='<div class="l"><b>'+(MVT_LABEL[m.type_mouvement]||m.type_mouvement)+'</b><small>'+(m.date_mouvement||'')+'</small></div>'
+      +'<div class="r" style="color:'+(v>0?'var(--good)':'var(--bad)')+'">'+(v>0?'+':'')+eur(v)+'</div>'
+    box.appendChild(el)
+  })
+}
+
+// feuille compte
+$('#btn-account').addEventListener('click', ()=>show($('#account-sheet'), true))
+$('#account-close').addEventListener('click', ()=>show($('#account-sheet'), false))
+$('#account-sheet').addEventListener('click', e=>{ if(e.target.id==='account-sheet') show($('#account-sheet'), false) })
+
+// activer Face ID (bouton accueil OU feuille compte)
+async function doRegister(btn){
+  btn.disabled=true; const old=btn.textContent; btn.textContent='…'
   try{
-    const { error } = await supabase.auth.registerPasskey()
-    if(error) throw error
+    const { error } = await supabase.auth.registerPasskey(); if(error) throw error
     try{ localStorage.setItem('pk_done','1') }catch(e){}
-    show($('#passkey-invite'), false)
-  }catch(err){
-    b.disabled=false; b.textContent='Réessayer'
-  }
-})
+    show($('#passkey-invite'), false); show($('#account-sheet'), false); btn.disabled=false; btn.textContent=old
+    flash('Face ID activé ✅')
+  }catch(err){ btn.disabled=false; btn.textContent=old }
+}
+$('#btn-register').addEventListener('click', ()=>doRegister($('#btn-register')))
+$('#btn-register2').addEventListener('click', ()=>doRegister($('#btn-register2')))
 
 // déconnexion
 $('#btn-logout').addEventListener('click', async ()=>{
-  await supabase.auth.signOut()
+  await supabase.auth.signOut(); show($('#account-sheet'), false)
   view('login'); loginStep(pkDone() ? 'main' : 'password')
+})
+
+/* ================= AJOUTER UNE VOITURE ================= */
+const form = { ref:null, refNom:null, etat:'nu', minifig:false, prop:'max', payer:'max', payerTouched:false }
+const PAYER_DEFAUT = { max:'max', jm:'50-50', jojo:'jojo' }
+const payerTxt = v => v==='50-50' ? '50-50' : (v==='jojo'?'Jojo':'Max')
+const esc = s => (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))
+const norm = s => (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,'')
+
+function segPick(container, value){ [...container.querySelectorAll('.segbtn')].forEach(b=>b.classList.toggle('on', b.dataset.v===value)) }
+function wireSeg(sel, onPick){
+  const c=$(sel)
+  c.addEventListener('click', e=>{ const b=e.target.closest('.segbtn'); if(!b) return; segPick(c, b.dataset.v); onPick(b.dataset.v) })
+}
+function addMsg(text,kind){ const m=$('#add-msg'); if(!text){show(m,false);return} m.textContent=text; m.className='msg '+(kind||''); show(m,true) }
+function flash(text){ const f=$('#flash'); f.textContent=text; f.classList.add('on'); setTimeout(()=>f.classList.remove('on'), 1900) }
+
+function openAdd(){
+  form.ref=null; form.refNom=null; form.etat='nu'; form.minifig=false; form.prop='max'; form.payer='max'; form.payerTouched=false
+  $('#f-ref').value=''; $('#ref-results').innerHTML=''; show($('#ref-chosen'), false); show($('#ref-new'), false)
+  $('#nf-nom').value=''; $('#nf-marque').value=''; $('#nf-ref').value=''
+  $('#f-prix').value=''; $('#f-note').value=''
+  segPick($('#f-etat'),'nu'); segPick($('#f-minifig'),'non'); segPick($('#f-prop'),'max'); segPick($('#nf-iconique'),'non')
+  show($('#f-payer'), false); $('#payer-label').textContent='Max'; addMsg('')
+  ;['single','lot'].forEach(s=>show($('#add-'+s), false)); show($('#add-kind'), true)
+  view('add')
+}
+
+$('#btn-add').addEventListener('click', openAdd)
+$('#add-close').addEventListener('click', ()=>view('app'))
+$('#kind-single').addEventListener('click', ()=>{ show($('#add-kind'),false); show($('#add-single'),true) })
+$('#kind-lot').addEventListener('click', ()=>{ show($('#add-kind'),false); show($('#add-lot'),true) })
+$('#lot-back').addEventListener('click', ()=>{ show($('#add-lot'),false); show($('#add-kind'),true) })
+
+segPick($('#f-etat'),'nu'); segPick($('#f-minifig'),'non'); segPick($('#f-prop'),'max'); segPick($('#nf-iconique'),'non')
+wireSeg('#f-etat', v=>{ form.etat=v })
+wireSeg('#f-minifig', v=>{ form.minifig=(v==='oui') })
+wireSeg('#nf-iconique', ()=>{})
+wireSeg('#f-prop', v=>{ form.prop=v; if(!form.payerTouched){ form.payer=PAYER_DEFAUT[v]; $('#payer-label').textContent=payerTxt(form.payer) } })
+wireSeg('#f-payer', v=>{ form.payer=v; form.payerTouched=true; $('#payer-label').textContent=payerTxt(v) })
+$('#payer-edit').addEventListener('click', ()=>{ const s=$('#f-payer'); const open=!s.classList.contains('hidden'); show(s,!open); if(!open) segPick(s, form.payer) })
+
+// recherche floue de référence dans le catalogue
+let catalogueCache=null
+async function getCatalogue(){ if(catalogueCache) return catalogueCache; const { data }=await supabase.from('catalogue').select('ref,nom,marque'); catalogueCache=data||[]; return catalogueCache }
+let searchT
+$('#f-ref').addEventListener('input', ()=>{ clearTimeout(searchT); searchT=setTimeout(runSearch, 150) })
+async function runSearch(){
+  const q=$('#f-ref').value.trim(); const box=$('#ref-results'); show($('#ref-chosen'), false); show($('#ref-new'), false)
+  if(!q){ box.innerHTML=''; return }
+  const nq=norm(q); const cat=await getCatalogue()
+  const hits=cat.map(c=>{
+    const hay=norm(c.nom+' '+(c.marque||'')+' '+c.ref); let score=hay.includes(nq)?2:0
+    if(!score){ let i=0; for(const ch of hay){ if(ch===nq[i]) i++ }; if(i===nq.length) score=1 }
+    return { c, score }
+  }).filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,4)
+  box.innerHTML=''
+  hits.forEach(h=>{
+    const el=document.createElement('div'); el.className='result'
+    el.innerHTML='<div><b>'+esc(h.c.nom)+'</b> <small>'+esc(h.c.marque||'')+'</small></div><small>'+esc(h.c.ref)+'</small>'
+    el.addEventListener('click', ()=>chooseRef(h.c.ref, h.c.nom)); box.appendChild(el)
+  })
+  const nu=document.createElement('div'); nu.className='result new'
+  nu.textContent='＋ Nouvelle référence « '+q+' »'
+  nu.addEventListener('click', ()=>{ $('#nf-nom').value=q; show($('#ref-new'), true); box.innerHTML='' }); box.appendChild(nu)
+}
+function chooseRef(ref, nom){
+  form.ref=ref; form.refNom=nom
+  $('#chosen-nom').textContent=nom; $('#chosen-ref').textContent='Réf. '+ref
+  show($('#ref-chosen'), true); $('#ref-results').innerHTML=''; show($('#ref-new'), false); $('#f-ref').value=''
+}
+$('#chosen-clear').addEventListener('click', ()=>{ form.ref=null; form.refNom=null; show($('#ref-chosen'), false); $('#f-ref').focus() })
+
+// créer une nouvelle référence
+$('#nf-validate').addEventListener('click', async ()=>{
+  const nom=$('#nf-nom').value.trim(); if(!nom){ addMsg("Donne un nom au set.",'err'); return }
+  const marque=$('#nf-marque').value.trim(); let ref=$('#nf-ref').value.trim()
+  const iconique=$('#nf-iconique .segbtn.on')?.dataset.v==='oui'
+  if(!ref){ ref='x'+norm(nom).slice(0,10)+String(Math.floor(Math.random()*900+100)) }
+  const b=$('#nf-validate'); b.disabled=true
+  const { error }=await supabase.from('catalogue').upsert({ ref, nom, marque, minifig_iconique:iconique }, { onConflict:'ref' })
+  b.disabled=false
+  if(error){ addMsg(error.message,'err'); return }
+  catalogueCache=null; chooseRef(ref, nom)
+})
+
+// enregistrer la voiture
+$('#f-save').addEventListener('click', async ()=>{
+  if(!form.ref){ addMsg("Choisis d'abord le modèle.",'err'); return }
+  const prix=parseFloat(($('#f-prix').value||'').replace(',','.'))
+  if(!(prix>0)){ addMsg("Indique le prix payé.",'err'); return }
+  busy($('#f-save'), true); addMsg('')
+  const { data:achat, error:e1 }=await supabase.from('achats')
+    .insert({ nature:'article_seul', montant_paye:prix, proprietaire:form.prop, payeur:form.payer }).select('id').single()
+  if(e1){ busy($('#f-save'),false); addMsg(e1.message,'err'); return }
+  const { error:e2 }=await supabase.from('articles').insert({
+    ref:form.ref, etat:form.etat, minifig:form.minifig, proprietaire:form.prop,
+    achat_id:achat.id, cout_achat:prix, note:($('#f-note').value.trim()||null)
+  })
+  if(e2){ busy($('#f-save'),false); addMsg(e2.message,'err'); return }
+  busy($('#f-save'), false)
+  flash('✅ '+form.refNom+' ajoutée')
+  view('app'); switchTab('accueil'); await refreshAll()
 })
 
 boot()

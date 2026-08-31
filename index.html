@@ -334,15 +334,68 @@
 
     <!-- Étape 0 : lot ou voiture seule -->
     <div id="add-kind" class="field" style="gap:12px">
-      <div class="q">C'est un lot ou une voiture seule ?</div>
-      <button class="bigchoice" id="kind-single">🚗 Une voiture seule<small>Tu as choisi la pièce, son prix est connu</small></button>
-      <button class="bigchoice" id="kind-lot">📦 Un lot<small>Un paquet « tout ou rien » à répartir</small></button>
+      <div class="q">Qu'est-ce que tu enregistres ?</div>
+      <button class="bigchoice" id="kind-single">🚗 Une voiture seule<small>Un achat : tu as choisi la pièce, son prix est connu</small></button>
+      <button class="bigchoice" id="kind-lot">📦 Un lot<small>Un achat « tout ou rien » à répartir</small></button>
+      <button class="bigchoice" id="kind-vente">💶 Une vente<small>Une voiture de ton stock qui est partie</small></button>
     </div>
 
-    <!-- Lot : à venir -->
-    <div id="add-lot" class="field hidden" style="gap:14px">
-      <div class="soon">La répartition d'un lot (partager le prix payé sur chaque voiture) arrive à la prochaine étape. En attendant, tu peux entrer les voitures d'un lot une par une en « voiture seule ».</div>
-      <button class="btn secondary" id="lot-back">Retour</button>
+    <!-- Lot : parcours en 3 temps -->
+    <div id="add-lot" class="field hidden" style="gap:16px">
+
+      <!-- Lot 1 : coût total -->
+      <div id="lot-1" class="field" style="gap:14px">
+        <div class="q">Combien as-tu payé le lot en tout ? (port compris)</div>
+        <input id="lot-total" type="number" inputmode="decimal" step="0.01" min="0" placeholder="ex. 60.00" />
+        <button class="btn" id="lot-1-next">Continuer</button>
+        <button class="linkish center" id="lot-back">Retour</button>
+      </div>
+
+      <!-- Lot 2 : ajouter les voitures -->
+      <div id="lot-2" class="field hidden" style="gap:14px">
+        <div class="q">Ajoute les voitures du lot, une par une</div>
+        <div id="lot-cars" class="list"></div>
+
+        <div class="field" style="gap:12px;border:1px dashed var(--field-brd);border-radius:14px;padding:14px">
+          <label>Modèle ou référence</label>
+          <input id="lc-ref" type="text" autocomplete="off" placeholder="Ferrari, 76914…" />
+          <div id="lc-results" class="results"></div>
+          <div id="lc-chosen" class="chosen hidden"><div><b id="lc-chosen-nom"></b><small id="lc-chosen-ref"></small></div><button class="linkish" id="lc-chosen-clear">changer</button></div>
+          <div id="lc-new" class="field hidden" style="gap:8px">
+            <label>Nom du set</label><input id="lcn-nom" type="text" placeholder="Ferrari 812…" />
+            <label>Marque</label><input id="lcn-marque" type="text" placeholder="Ferrari…" />
+            <label>Réf. 5 chiffres (si tu l'as)</label><input id="lcn-ref" type="text" inputmode="numeric" placeholder="ex. 76914" />
+            <button class="btn secondary" id="lcn-validate">Utiliser cette référence</button>
+          </div>
+          <label style="margin-top:2px">État</label>
+          <div class="seg" id="lc-etat">
+            <button class="segbtn" data-v="neuf_scelle">Neuf scellé</button><button class="segbtn" data-v="notice_boite">Notice + boîte</button><button class="segbtn" data-v="notice_seule">Notice seule</button><button class="segbtn" data-v="nu">Nu</button><button class="segbtn" data-v="incomplet">Incomplet</button>
+          </div>
+          <label style="margin-top:2px">Minifigurine</label>
+          <div class="seg" id="lc-minifig"><button class="segbtn" data-v="non">Absente</button><button class="segbtn" data-v="oui">Présente</button></div>
+          <div id="lc-est" class="payer" style="display:none"></div>
+          <div id="lc-est-input" class="field hidden"><label>Prix de revente estimé (€)</label><input id="lc-val" type="number" inputmode="decimal" step="0.01" min="0" placeholder="ton estimation" /></div>
+          <div id="lc-msg" class="msg hidden"></div>
+          <button class="btn secondary" id="lc-add">＋ Ajouter cette voiture au lot</button>
+        </div>
+
+        <button class="btn" id="lot-2-next">Terminer le lot</button>
+      </div>
+
+      <!-- Lot 3 : propriétaire / payeur / répartition -->
+      <div id="lot-3" class="field hidden" style="gap:16px">
+        <div class="field"><label>À qui est le lot ?</label>
+          <div class="seg" id="lot-prop"><button class="segbtn" data-v="max">Max</button><button class="segbtn" data-v="jm">JM (commun)</button><button class="segbtn" data-v="jojo">Jojo</button></div>
+        </div>
+        <div class="payer">Payé par : <b id="lot-payer-label">Max</b> <button class="linkish" id="lot-payer-edit">modifier</button></div>
+        <div class="seg hidden" id="lot-payer"><button class="segbtn" data-v="max">Max</button><button class="segbtn" data-v="jojo">Jojo</button><button class="segbtn" data-v="50-50">50-50</button></div>
+        <div class="paneltitle" style="font-size:16px">Répartition du coût sur chaque voiture</div>
+        <div id="lot-recap" class="list"></div>
+        <p class="note" id="lot-recap-note"></p>
+        <div id="lot-msg" class="msg hidden"></div>
+        <button class="btn" id="lot-save">Enregistrer le lot</button>
+        <button class="linkish center" id="lot-3-back">Retour aux voitures</button>
+      </div>
     </div>
 
     <!-- Voiture seule : formulaire -->
@@ -432,6 +485,36 @@
 
       <div id="add-msg" class="msg hidden"></div>
       <button class="btn" id="f-save">Enregistrer la voiture</button>
+    </div>
+
+    <!-- Vente : formulaire -->
+    <div id="add-vente" class="field hidden" style="gap:16px">
+      <div class="field">
+        <label>Quelle voiture est partie ?</label>
+        <input id="v-search" type="text" autocomplete="off" placeholder="Cherche dans ton stock…" />
+        <div id="v-list" class="list" style="max-height:260px;overflow-y:auto"></div>
+        <div id="v-chosen" class="chosen hidden">
+          <div><b id="v-chosen-nom"></b><small id="v-chosen-meta"></small></div>
+          <button class="linkish" id="v-chosen-clear">changer</button>
+        </div>
+        <div id="v-empty" class="empty hidden">Ton stock est vide — ajoute d'abord une voiture.</div>
+      </div>
+
+      <div class="field">
+        <label>Montant encaissé, frais déjà déduits (€)</label>
+        <input id="v-montant" type="number" inputmode="decimal" step="0.01" min="0" placeholder="ex. 28.00" />
+      </div>
+
+      <div class="field hidden" id="v-encaisse-wrap">
+        <label>Encaissé par qui ?</label>
+        <div class="seg" id="v-encaisse">
+          <button class="segbtn" data-v="max">Max</button>
+          <button class="segbtn" data-v="jojo">Jojo</button>
+        </div>
+      </div>
+
+      <div id="vente-msg" class="msg hidden"></div>
+      <button class="btn" id="v-save">Enregistrer la vente</button>
     </div>
   </section>
 
@@ -658,14 +741,18 @@ function openAdd(){
   $('#f-prix').value=''; $('#f-note').value=''
   segPick($('#f-etat'),'nu'); segPick($('#f-minifig'),'non'); segPick($('#f-prop'),'max'); segPick($('#nf-iconique'),'non')
   show($('#f-payer'), false); $('#payer-label').textContent='Max'; addMsg('')
-  ;['single','lot'].forEach(s=>show($('#add-'+s), false)); show($('#add-kind'), true)
+  // reset vente
+  vSel=null; $('#v-search').value=''; $('#v-list').innerHTML=''; show($('#v-chosen'), false); show($('#v-empty'), false)
+  $('#v-montant').value=''; show($('#v-encaisse-wrap'), false); venteMsg('')
+  ;['single','lot','vente'].forEach(s=>show($('#add-'+s), false)); show($('#add-kind'), true)
   view('add')
 }
 
 $('#btn-add').addEventListener('click', openAdd)
 $('#add-close').addEventListener('click', ()=>view('app'))
 $('#kind-single').addEventListener('click', ()=>{ show($('#add-kind'),false); show($('#add-single'),true) })
-$('#kind-lot').addEventListener('click', ()=>{ show($('#add-kind'),false); show($('#add-lot'),true) })
+$('#kind-lot').addEventListener('click', ()=>{ show($('#add-kind'),false); show($('#add-lot'),true); resetLot() })
+$('#kind-vente').addEventListener('click', ()=>{ show($('#add-kind'),false); show($('#add-vente'),true); loadVentePicker() })
 $('#lot-back').addEventListener('click', ()=>{ show($('#add-lot'),false); show($('#add-kind'),true) })
 
 segPick($('#f-etat'),'nu'); segPick($('#f-minifig'),'non'); segPick($('#f-prop'),'max'); segPick($('#nf-iconique'),'non')
@@ -737,6 +824,193 @@ $('#f-save').addEventListener('click', async ()=>{
   busy($('#f-save'), false)
   flash('✅ '+form.refNom+' ajoutée')
   view('app'); switchTab('accueil'); await refreshAll()
+})
+
+/* ---- Vente ---- */
+let vSel=null, vEncaisse='max', vStock=[]
+function venteMsg(text,kind){ const m=$('#vente-msg'); if(!text){show(m,false);return} m.textContent=text; m.className='msg '+(kind||''); show(m,true) }
+
+async function loadVentePicker(){
+  const { data } = await supabase.from('v_stock').select('*').order('date_entree',{ascending:false})
+  vStock = data||[]
+  show($('#v-empty'), vStock.length===0)
+  renderVenteList(vStock)
+}
+function renderVenteList(rows){
+  const box=$('#v-list'); box.innerHTML=''
+  rows.forEach(a=>{
+    const el=document.createElement('div'); el.className='result'
+    el.innerHTML='<div><b>'+esc(a.nom||a.ref)+'</b> <small>'+ETAT_LABEL[a.etat]+' · '+PROP_LABEL[a.proprietaire]+'</small></div><small>'+eur(a.cout_achat)+'</small>'
+    el.addEventListener('click', ()=>chooseVente(a))
+    box.appendChild(el)
+  })
+}
+$('#v-search').addEventListener('input', ()=>{
+  const nq=norm($('#v-search').value)
+  renderVenteList(!nq ? vStock : vStock.filter(a=>norm((a.nom||'')+' '+(a.marque||'')+' '+a.ref).includes(nq)))
+})
+function chooseVente(a){
+  vSel=a
+  $('#v-chosen-nom').textContent = a.nom||a.ref
+  $('#v-chosen-meta').textContent = 'Réf. '+a.ref+' · '+ETAT_LABEL[a.etat]+' · '+PROP_LABEL[a.proprietaire]
+  show($('#v-chosen'), true); $('#v-list').innerHTML=''; $('#v-search').value=''
+  // encaissé par : ne se pose que pour une voiture commune (JM)
+  if(a.proprietaire==='jm'){ vEncaisse='max'; segPick($('#v-encaisse'),'max'); show($('#v-encaisse-wrap'), true) }
+  else { vEncaisse = (a.proprietaire==='jojo'?'jojo':'max'); show($('#v-encaisse-wrap'), false) }
+}
+$('#v-chosen-clear').addEventListener('click', ()=>{ vSel=null; show($('#v-chosen'), false); show($('#v-encaisse-wrap'), false); renderVenteList(vStock); $('#v-search').focus() })
+wireSeg('#v-encaisse', v=>{ vEncaisse=v })
+
+$('#v-save').addEventListener('click', async ()=>{
+  if(!vSel){ venteMsg("Choisis la voiture vendue.",'err'); return }
+  const montant=parseFloat(($('#v-montant').value||'').replace(',','.'))
+  if(!(montant>0)){ venteMsg("Indique le montant encaissé.",'err'); return }
+  busy($('#v-save'), true); venteMsg('')
+  const { error } = await supabase.from('ventes').insert({ article_id:vSel.id, montant_encaisse:montant, encaisse_par:vEncaisse })
+  if(error){ busy($('#v-save'),false); venteMsg(error.message,'err'); return }
+  busy($('#v-save'), false)
+  flash('✅ '+(vSel.nom||vSel.ref)+' vendue')
+  view('app'); switchTab('ventes'); await refreshAll()
+})
+
+/* ---- Lot ---- */
+let lotTotal=0, lotCars=[], lcSel=null, lcEtat='nu', lcMinifig=false, lcEst=null, lcEtiq='estime_max'
+let lotProp='max', lotPayer='max', lotPayerTouched=false
+function lotMsg(t,k){ const m=$('#lot-msg'); if(!t){show(m,false);return} m.textContent=t; m.className='msg '+(k||''); show(m,true) }
+function lcMsg(t,k){ const m=$('#lc-msg'); if(!t){show(m,false);return} m.textContent=t; m.className='msg '+(k||''); show(m,true) }
+
+function resetLcForm(){
+  lcSel=null; lcEtat='nu'; lcMinifig=false; lcEst=null; lcEtiq='estime_max'
+  $('#lc-ref').value=''; $('#lc-results').innerHTML=''; show($('#lc-chosen'), false); show($('#lc-new'), false)
+  $('#lcn-nom').value=''; $('#lcn-marque').value=''; $('#lcn-ref').value=''
+  $('#lc-val').value=''; show($('#lc-est-input'), false); $('#lc-est').style.display='none'
+  segPick($('#lc-etat'),'nu'); segPick($('#lc-minifig'),'non'); lcMsg('')
+}
+function resetLot(){
+  lotTotal=0; lotCars=[]; lotProp='max'; lotPayer='max'; lotPayerTouched=false
+  $('#lot-total').value=''; resetLcForm(); renderLotCars()
+  segPick($('#lot-prop'),'max'); show($('#lot-payer'), false); $('#lot-payer-label').textContent='Max'
+  ;['1','2','3'].forEach(s=>show($('#lot-'+s), s==='1')); lotMsg('')
+}
+
+// étape 1 : coût total
+$('#lot-1-next').addEventListener('click', ()=>{
+  const t=parseFloat(($('#lot-total').value||'').replace(',','.'))
+  if(!(t>0)){ lotMsg("Indique le prix payé pour le lot.",'err'); return }
+  lotTotal=t; lotMsg(''); show($('#lot-1'), false); show($('#lot-2'), true)
+})
+
+// recherche de référence (par voiture)
+let lcSearchT
+$('#lc-ref').addEventListener('input', ()=>{ clearTimeout(lcSearchT); lcSearchT=setTimeout(lcRunSearch, 150) })
+async function lcRunSearch(){
+  const q=$('#lc-ref').value.trim(); const box=$('#lc-results'); show($('#lc-chosen'), false); show($('#lc-new'), false)
+  if(!q){ box.innerHTML=''; return }
+  const nq=norm(q); const cat=await getCatalogue()
+  const hits=cat.filter(c=>norm(c.nom+' '+(c.marque||'')+' '+c.ref).includes(nq)).slice(0,4)
+  box.innerHTML=''
+  hits.forEach(c=>{ const el=document.createElement('div'); el.className='result'
+    el.innerHTML='<div><b>'+esc(c.nom)+'</b> <small>'+esc(c.marque||'')+'</small></div><small>'+esc(c.ref)+'</small>'
+    el.addEventListener('click', ()=>lcChoose(c.ref,c.nom)); box.appendChild(el) })
+  const nu=document.createElement('div'); nu.className='result new'; nu.textContent='＋ Nouvelle référence « '+q+' »'
+  nu.addEventListener('click', ()=>{ $('#lcn-nom').value=q; show($('#lc-new'), true); box.innerHTML='' }); box.appendChild(nu)
+}
+$('#lcn-validate').addEventListener('click', async ()=>{
+  const nom=$('#lcn-nom').value.trim(); if(!nom){ lcMsg("Donne un nom au set.",'err'); return }
+  const marque=$('#lcn-marque').value.trim(); let ref=$('#lcn-ref').value.trim()
+  if(!ref){ ref='x'+norm(nom).slice(0,10)+String(Math.floor(Math.random()*900+100)) }
+  const b=$('#lcn-validate'); b.disabled=true
+  const { error }=await supabase.from('catalogue').upsert({ ref, nom, marque, minifig_iconique:false }, { onConflict:'ref' })
+  b.disabled=false; if(error){ lcMsg(error.message,'err'); return }
+  catalogueCache=null; lcChoose(ref, nom)
+})
+function lcChoose(ref,nom){
+  lcSel={ref,nom}
+  $('#lc-chosen-nom').textContent=nom; $('#lc-chosen-ref').textContent='Réf. '+ref
+  show($('#lc-chosen'), true); $('#lc-results').innerHTML=''; show($('#lc-new'), false); $('#lc-ref').value=''
+  lcEstimate()
+}
+$('#lc-chosen-clear').addEventListener('click', ()=>{ lcSel=null; show($('#lc-chosen'), false); $('#lc-est').style.display='none'; show($('#lc-est-input'), false); $('#lc-ref').focus() })
+wireSeg('#lc-etat', v=>{ lcEtat=v; lcEstimate() })
+wireSeg('#lc-minifig', v=>{ lcMinifig=(v==='oui') })
+
+// cascade de valorisation : niveaux 1-2 (historique), sinon 4 (Max estime)
+async function lcEstimate(){
+  if(!lcSel) return
+  const { data }=await supabase.from('prix_reference').select('*').eq('ref', lcSel.ref).eq('etat', lcEtat).limit(1)
+  const row=(data||[])[0]
+  if(row && Number(row.nb_observations)>=1){
+    const strong=Number(row.nb_observations)>=3
+    lcEst = strong ? Number(row.prix_affiche) : Number(row.prix_plancher); lcEtiq = strong ? 'constate' : 'constate_faible'
+    $('#lc-est').style.display='flex'; $('#lc-est').innerHTML='Valeur estimée : <b>'+eur(lcEst)+'</b> · '+(strong?'Constaté':'Constaté (faible historique)')
+    show($('#lc-est-input'), false)
+  } else {
+    lcEst=null; lcEtiq='estime_max'; $('#lc-est').style.display='none'; show($('#lc-est-input'), true)
+  }
+}
+
+$('#lc-add').addEventListener('click', ()=>{
+  if(!lcSel){ lcMsg("Choisis le modèle.",'err'); return }
+  let val=lcEst
+  if(val==null){ val=parseFloat(($('#lc-val').value||'').replace(',','.')); if(!(val>0)){ lcMsg("Estime le prix de revente.",'err'); return } }
+  lotCars.push({ ref:lcSel.ref, nom:lcSel.nom, etat:lcEtat, minifig:lcMinifig, val:Number(val), etiq:lcEtiq })
+  resetLcForm(); renderLotCars()
+})
+function renderLotCars(){
+  const box=$('#lot-cars'); if(!box) return; box.innerHTML=''
+  lotCars.forEach((c,i)=>{
+    const el=document.createElement('div'); el.className='row'
+    el.innerHTML='<div class="l"><b>'+esc(c.nom)+'</b><small>'+ETAT_LABEL[c.etat]+(c.minifig?' · minifig':'')+' · est. '+eur(c.val)+'</small></div>'
+    const rm=document.createElement('button'); rm.className='linkish'; rm.textContent='retirer'
+    rm.addEventListener('click', ()=>{ lotCars.splice(i,1); renderLotCars() }); el.appendChild(rm)
+    box.appendChild(el)
+  })
+}
+
+$('#lot-2-next').addEventListener('click', ()=>{
+  if(lotCars.length===0){ lotMsg("Ajoute au moins une voiture.",'err'); return }
+  buildRepartition(); show($('#lot-2'), false); show($('#lot-3'), true)
+})
+$('#lot-3-back').addEventListener('click', ()=>{ show($('#lot-3'), false); show($('#lot-2'), true) })
+
+segPick($('#lot-prop'),'max'); segPick($('#lot-payer'),'max')
+wireSeg('#lot-prop', v=>{ lotProp=v; if(!lotPayerTouched){ lotPayer=PAYER_DEFAUT[v]; $('#lot-payer-label').textContent=payerTxt(lotPayer) } })
+wireSeg('#lot-payer', v=>{ lotPayer=v; lotPayerTouched=true; $('#lot-payer-label').textContent=payerTxt(v) })
+$('#lot-payer-edit').addEventListener('click', ()=>{ const s=$('#lot-payer'); const open=!s.classList.contains('hidden'); show(s,!open); if(!open) segPick(s, lotPayer) })
+
+// clé de répartition : coût réparti au prorata des valeurs estimées
+function computeCouts(){
+  const sum=lotCars.reduce((a,c)=>a+c.val,0) || 1; let acc=0
+  return lotCars.map((c,i)=>{
+    if(i===lotCars.length-1) return Math.round((lotTotal-acc)*100)/100
+    const co=Math.round((c.val/sum)*lotTotal*100)/100; acc+=co; return co
+  })
+}
+function buildRepartition(){
+  const couts=computeCouts(); const box=$('#lot-recap'); box.innerHTML=''
+  lotCars.forEach((c,i)=>{
+    const el=document.createElement('div'); el.className='row'
+    el.innerHTML='<div class="l"><b>'+esc(c.nom)+'</b><small>est. '+eur(c.val)+' · '+(c.etiq==='constate'?'Constaté':c.etiq==='constate_faible'?'Constaté faible':'Estimé')+'</small></div>'
+      +'<div class="r">'+eur(couts[i])+'</div>'
+    box.appendChild(el)
+  })
+  const estTot=lotCars.reduce((a,c)=>a+c.val,0)
+  $('#lot-recap-note').textContent=lotCars.length+' voiture'+(lotCars.length>1?'s':'')+' · valeur estimée totale '+eur(estTot)+' pour '+eur(lotTotal)+' payés. Le coût est réparti au prorata — ne cherche pas la bonne affaire dans la marge estimée, elle est identique partout par construction. Le vrai signal viendra à la revente.'
+}
+
+$('#lot-save').addEventListener('click', async ()=>{
+  if(lotCars.length===0){ lotMsg("Aucune voiture.",'err'); return }
+  busy($('#lot-save'), true); lotMsg('')
+  const couts=computeCouts()
+  const { data:achat, error:e1 }=await supabase.from('achats')
+    .insert({ nature:'lot', montant_paye:lotTotal, proprietaire:lotProp, payeur:lotPayer }).select('id').single()
+  if(e1){ busy($('#lot-save'),false); lotMsg(e1.message,'err'); return }
+  const articles=lotCars.map((c,i)=>({ ref:c.ref, etat:c.etat, minifig:c.minifig, proprietaire:lotProp, achat_id:achat.id, cout_achat:couts[i], valeur_estimee:c.val, etiquette:c.etiq }))
+  const { error:e2 }=await supabase.from('articles').insert(articles)
+  if(e2){ busy($('#lot-save'),false); lotMsg(e2.message,'err'); return }
+  busy($('#lot-save'), false)
+  flash('✅ Lot ajouté ('+lotCars.length+' voitures)')
+  view('app'); switchTab('stock'); await refreshAll()
 })
 
 boot()

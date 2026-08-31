@@ -296,6 +296,23 @@
       <button class="tab" data-tab="jojo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span>Jojo</span></button>
     </nav>
 
+    <!-- Feuille « fiche voiture » -->
+    <div id="stock-sheet" class="sheet hidden">
+      <div class="sheetcard">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+          <div><b id="sd-nom" style="font-size:19px;display:block">—</b><small id="sd-meta" style="color:var(--muted)">—</small></div>
+        </div>
+        <div class="grid">
+          <div class="card"><div class="k">Prix d'achat</div><div class="v small" id="sd-achat">—</div></div>
+          <div class="card"><div class="k">Jours en stock</div><div class="v small" id="sd-jours">—</div></div>
+          <div class="card"><div class="k">Prix d'affichage</div><div class="v small" id="sd-affiche">—</div></div>
+          <div class="card"><div class="k">Prix plancher</div><div class="v small" id="sd-plancher">—</div></div>
+        </div>
+        <div id="sd-note" class="note hidden"></div>
+        <button class="linkish center" id="stock-sheet-close">Fermer</button>
+      </div>
+    </div>
+
     <!-- Feuille « compte » — Face ID vit ICI seulement (bug corrigé : plus sur l'accueil) -->
     <div id="account-sheet" class="sheet hidden">
       <div class="sheetcard">
@@ -540,12 +557,25 @@ async function loadStock(){
   stockCache = data||[]
   const box=$('#stock-list'); box.innerHTML=''; show($('#stock-empty'), stockCache.length===0)
   stockCache.forEach(a=>{
-    const el=document.createElement('div'); el.className='row'
-    el.innerHTML='<div class="l"><b>'+esc(a.nom||a.ref)+'</b><small>'+ETAT_LABEL[a.etat]+(a.minifig?' · minifig':'')+' · '+PROP_LABEL[a.proprietaire]+'</small></div>'
+    const el=document.createElement('div'); el.className='row'; el.style.cursor='pointer'
+    el.innerHTML='<div class="l"><b>'+esc(a.nom||a.ref)+'</b><small>Set '+esc(a.numero_set_lego||a.ref)+' · '+ETAT_LABEL[a.etat]+(a.minifig?' · minifig':'')+' · '+PROP_LABEL[a.proprietaire]+'</small></div>'
       +'<div class="r">'+eur(a.cout_achat)+'</div>'
+    el.addEventListener('click', ()=>openStockDetail(a))
     box.appendChild(el)
   })
 }
+function openStockDetail(a){
+  $('#sd-nom').textContent = a.nom || a.ref
+  $('#sd-meta').textContent = 'Set '+(a.numero_set_lego||a.ref)+' · Réf. '+a.ref+' · '+ETAT_LABEL[a.etat]+(a.minifig?' · minifig':'')+' · '+PROP_LABEL[a.proprietaire]
+  $('#sd-achat').textContent = eur(a.cout_achat)
+  $('#sd-jours').textContent = (a.jours_en_stock??'—')+(a.jours_en_stock!=null?' j':'')
+  $('#sd-affiche').textContent = eur(a.prix_affiche)
+  $('#sd-plancher').textContent = eur(a.prix_plancher)
+  show($('#sd-note'), false)
+  show($('#stock-sheet'), true)
+}
+$('#stock-sheet-close').addEventListener('click', ()=>show($('#stock-sheet'), false))
+$('#stock-sheet').addEventListener('click', e=>{ if(e.target.id==='stock-sheet') show($('#stock-sheet'), false) })
 async function loadVentes(){
   const { data } = await supabase.from('v_ventes_detail').select('*').order('date_vente',{ascending:false})
   const rows=data||[]; const box=$('#ventes-list'); box.innerHTML=''; show($('#ventes-empty'), rows.length===0)
@@ -617,7 +647,7 @@ $('#add-close').addEventListener('click', ()=>view('app'))
 let catalogueCache=null
 async function getCatalogue(){
   if(catalogueCache) return catalogueCache
-  const { data }=await supabase.from('catalogue').select('ref,nom,marque,prix_scelle_affiche,minifig_defaut')
+  const { data }=await supabase.from('catalogue').select('ref,nom,marque,prix_scelle_affiche,minifig_defaut,numero_set_lego')
   catalogueCache=data||[]; return catalogueCache
 }
 let cSel=null, cEtat='nu', cMinifig=false, cSearchT
@@ -632,8 +662,10 @@ async function cRunSearch(){
   const hits=cat.filter(c=>norm(c.nom+' '+(c.marque||'')+' '+c.ref).includes(nq)).slice(0,5)
   box.innerHTML=''
   hits.forEach(c=>{
+    const freres = cat.filter(x=>x.numero_set_lego && x.numero_set_lego===c.numero_set_lego)
+    const partage = freres.length>1 ? ' · '+(freres.findIndex(x=>x.ref===c.ref)+1)+'/'+freres.length+' dans la boîte' : ''
     const el=document.createElement('div'); el.className='result'
-    el.innerHTML='<div><b>'+esc(c.nom)+'</b> <small>'+esc(c.marque||'')+'</small></div><small>'+(c.prix_scelle_affiche?eur(c.prix_scelle_affiche)+' scellé':'Réf. '+esc(c.ref))+'</small>'
+    el.innerHTML='<div><b>'+esc(c.nom)+'</b> <small>Set '+esc(c.numero_set_lego||c.ref)+'</small></div><small>'+(c.prix_scelle_affiche?eur(c.prix_scelle_affiche)+' scellé'+partage:'Réf. '+esc(c.ref))+'</small>'
     el.addEventListener('click', ()=>cChoose(c)); box.appendChild(el)
   })
   const nu=document.createElement('div'); nu.className='result new'
@@ -698,7 +730,7 @@ $('#c-add').addEventListener('click', async ()=>{
     if(!cSel){ cMsg("Choisis d'abord le modèle.",'err'); return }
     let poids = cSel.prix_scelle_affiche ? cSel._valeurEstimee : parseFloat(($('#c-val').value||'').replace(',','.'))
     if(!(poids>0)){ cMsg("Indique une valeur estimée pour cette voiture.",'err'); return }
-    cars.push({ ref:cSel.ref, nom:cSel.nom, etat:cEtat, minifig:cMinifig, poids })
+    cars.push({ ref:cSel.ref, nom:cSel.nom, numeroSet:cSel.numero_set_lego, etat:cEtat, minifig:cMinifig, poids })
     resetCarForm(); renderCarsList()
   }
 })
@@ -710,9 +742,9 @@ $('#c-ref').addEventListener('input', ()=>{
   const already = new Set(saleCars.map(c=>c.id))
   stockCache.filter(a=>!already.has(a.id) && norm((a.nom||'')+' '+(a.marque||'')+' '+a.ref).includes(nq)).slice(0,6).forEach(a=>{
     const el=document.createElement('div'); el.className='result'
-    el.innerHTML='<div><b>'+esc(a.nom||a.ref)+'</b> <small>'+ETAT_LABEL[a.etat]+' · '+PROP_LABEL[a.proprietaire]+'</small></div><small>'+eur(a.cout_achat)+'</small>'
+    el.innerHTML='<div><b>'+esc(a.nom||a.ref)+'</b> <small>Set '+esc(a.numero_set_lego||a.ref)+' · '+ETAT_LABEL[a.etat]+' · '+PROP_LABEL[a.proprietaire]+'</small></div><small>'+eur(a.cout_achat)+'</small>'
     el.addEventListener('click', ()=>{
-      saleCars.push({ id:a.id, nom:a.nom||a.ref, ref:a.ref, etat:a.etat, proprietaire:a.proprietaire, poids: Number(a.valeur_estimee||a.cout_achat||1) })
+      saleCars.push({ id:a.id, nom:a.nom||a.ref, ref:a.ref, numeroSet:a.numero_set_lego, etat:a.etat, proprietaire:a.proprietaire, poids: Number(a.valeur_estimee||a.cout_achat||1) })
       $('#c-ref').value=''; box.innerHTML=''; renderCarsList()
     })
     box.appendChild(el)
@@ -724,7 +756,8 @@ function renderCarsList(){
   const list = mode==='achat' ? cars : saleCars
   list.forEach((c,i)=>{
     const el=document.createElement('div'); el.className='row'
-    const meta = mode==='achat' ? (ETAT_LABEL[c.etat]+(c.minifig?' · minifig':'')+' · poids '+eur(c.poids)) : (ETAT_LABEL[c.etat]+' · '+PROP_LABEL[c.proprietaire])
+    const setTxt = 'Set '+(c.numeroSet||c.numero_set_lego||c.ref)+' · '
+    const meta = mode==='achat' ? (setTxt+ETAT_LABEL[c.etat]+(c.minifig?' · minifig':'')+' · poids '+eur(c.poids)) : (setTxt+ETAT_LABEL[c.etat]+' · '+PROP_LABEL[c.proprietaire])
     el.innerHTML='<div class="l"><b>'+esc(c.nom)+'</b><small>'+meta+'</small></div>'
     const rm=document.createElement('button'); rm.className='linkish'; rm.textContent='retirer'
     rm.addEventListener('click', ()=>{ list.splice(i,1); renderCarsList() }); el.appendChild(rm)

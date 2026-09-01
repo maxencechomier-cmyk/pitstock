@@ -172,6 +172,29 @@
   .chosen small{color:var(--muted);font-size:12px;display:block}
   .payer{font-size:14px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .payer b{color:var(--ink)}
+
+  /* Code couleur propriétaire — fixe partout dans l'app, pour reconnaître "à qui c'est"
+     d'un coup d'œil sans lire le texte (Max=orange, JM=bleu, Jojo=gris neutre) */
+  .propchip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:750;
+    padding:3px 9px 3px 7px;border-radius:20px;white-space:nowrap}
+  .propchip i{width:7px;height:7px;border-radius:50%;display:block;flex:none}
+  .propchip.p-max{background:rgba(255,176,31,.18);color:var(--accent)}
+  .propchip.p-max i{background:var(--accent)}
+  .propchip.p-jm{background:rgba(79,141,255,.18);color:#6aa4ff}
+  .propchip.p-jm i{background:#4f8dff}
+  .propchip.p-jojo{background:rgba(139,147,167,.20);color:#b7bccb}
+  .propchip.p-jojo i{background:#8b93a7}
+  .stockgroup{display:flex;align-items:center;gap:8px;padding:6px 2px 0;margin-top:2px}
+  .stockgroup small{color:var(--faint);font-size:12px}
+  #a-prop .segbtn[data-v="jm"].on{background:#4f8dff;border-color:#4f8dff;color:#fff}
+  #a-prop .segbtn[data-v="jojo"].on{background:#8b93a7;border-color:#8b93a7;color:#0e0e11}
+  #v-encaisse .segbtn[data-v="jojo"].on{background:#8b93a7;border-color:#8b93a7;color:#0e0e11}
+
+  .toggle-row{display:flex;align-items:center;gap:12px}
+  .toggle{width:51px;height:31px;border-radius:16px;border:0;background:var(--field);position:relative;cursor:pointer;padding:2px;flex:none;transition:background .18s ease}
+  .toggle.on{background:var(--good)}
+  .toggle-knob{display:block;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.35);transition:transform .18s ease}
+  .toggle.on .toggle-knob{transform:translateX(20px)}
   .flash{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--good);color:#04110b;
     font-weight:700;padding:12px 20px;border-radius:14px;box-shadow:var(--shadow);z-index:50;opacity:0;pointer-events:none;transition:opacity .25s}
   .flash.on{opacity:1}
@@ -217,7 +240,7 @@
   <section id="app" class="hidden">
     <header class="statusbar">
       <div class="sbstats">
-        <div class="sbstat"><span>Résultat</span><b id="sb-res">—</b></div>
+        <div class="sbstat"><span>Résultat net</span><b id="sb-res">—</b></div>
         <div class="sbsep"></div>
         <div class="sbstat"><span>Stock</span><b id="sb-stock">—</b></div>
         <div class="sbsep"></div>
@@ -264,14 +287,33 @@
         <div id="ventes-empty" class="empty hidden">Aucune vente enregistrée pour l'instant.</div>
       </div>
 
-      <!-- BILAN -->
+      <!-- BILAN — les 3 poches séparées, pour ne jamais les mélanger -->
       <div class="panel hidden" id="tab-bilan">
         <div class="paneltitle">Bilan</div>
-        <div class="grid">
-          <div class="card"><div class="k">Valeur de stock</div><div class="v small" id="kpi-valeur">—</div></div>
-          <div class="card"><div class="k">Résultat net Max</div><div class="v small" id="kpi-net">—</div></div>
+
+        <div class="card" style="border-color:rgba(255,176,31,.35)">
+          <div class="k"><span class="propchip p-max"><i></i>Toi</span> — ta caisse, à toi seul</div>
+          <div class="v" id="bilan-max-net">—</div>
+          <div class="sub" id="bilan-max-detail">—</div>
         </div>
-        <div class="soon">Le détail par caisse (Max / JM) et tes records apparaîtront ici dès qu'il y aura des ventes.</div>
+
+        <div class="card" style="border-color:rgba(79,141,255,.35)">
+          <div class="k"><span class="propchip p-jm"><i></i>JM</span> — commune avec Jojo, résultat partagé 50-50</div>
+          <div class="v" id="bilan-jm-total">—</div>
+          <div class="sub" id="bilan-jm-detail">—</div>
+        </div>
+
+        <div class="card" id="bilan-jojo-card" style="border-color:rgba(139,147,167,.35);cursor:pointer">
+          <div class="k"><span class="propchip p-jojo"><i></i>Jojo</span> — l'ardoise entre vous deux</div>
+          <div class="v" id="bilan-jojo-solde">—</div>
+          <div class="sub" id="bilan-jojo-sense">Touche pour voir le détail →</div>
+        </div>
+
+        <div class="hero" style="text-align:center;margin-top:2px">
+          <div class="k">Résultat net Max (avec stock)</div>
+          <div class="v" id="kpi-net">—</div>
+          <div class="sub">Ta caisse + la moitié du résultat JM — c'est le seul des trois chiffres ci-dessus qui dit ce qui est vraiment à toi.</div>
+        </div>
       </div>
 
       <!-- JOJO -->
@@ -384,8 +426,14 @@
       <div class="field"><label>À qui sont ces voitures ?</label>
         <div class="seg" id="a-prop"><button class="segbtn" data-v="max">Max</button><button class="segbtn" data-v="jm">JM (commun)</button><button class="segbtn" data-v="jojo">Jojo</button></div>
       </div>
-      <div class="payer">Payé par : <b id="a-payer-label">Max</b> <button class="linkish" id="a-payer-edit">modifier</button></div>
-      <div class="seg hidden" id="a-payer"><button class="segbtn" data-v="max">Max</button><button class="segbtn" data-v="jojo">Jojo</button><button class="segbtn" data-v="50-50">50-50</button></div>
+      <div id="a-payer-row" class="field hidden" style="gap:8px">
+        <label>Payé par</label>
+        <div class="toggle-row">
+          <button class="toggle" id="a-payer-toggle" role="switch" aria-checked="true" type="button"><span class="toggle-knob"></span></button>
+          <span id="a-payer-label" style="font-size:15px;font-weight:650">Toi</span>
+        </div>
+        <button class="linkish" id="a-payer-alt" style="align-self:flex-start;padding:2px 0"></button>
+      </div>
 
       <div class="field">
         <label>Prix payé en tout, port compris (€)</label>
@@ -506,8 +554,21 @@ const TABS = ['accueil','stock','ventes','bilan','jojo']
 const ETAT_LABEL = { neuf_scelle:'Neuf scellé', notice_boite:'Notice + boîte', notice_seule:'Notice seule', nu:'Nu', incomplet:'Incomplet' }
 const PROP_LABEL = { max:'Max', jm:'JM', jojo:'Jojo' }
 const MVT_LABEL = { apport:'Apport de Jojo', avance_part_jm:'Avance de Max (part JM)', avance_achat_jojo:'Avance de Max (voiture Jojo)', part_resultat:'Part de résultat', encaissement_direct:'Encaissé par Jojo', pret_personnel:'Prêt personnel', reglement:'Règlement' }
-const PAYER_DEFAUT = { max:'max', jm:'50-50', jojo:'jojo' }
-const payerTxt = v => v==='50-50' ? '50-50' : (v==='jojo'?'Jojo':'Max')
+// Décidé le 01/09 avec Max : sur un achat JM, c'est presque toujours lui qui avance
+// l'argent — le défaut colle au réel (Jojo débité de sa moitié tout de suite) plutôt
+// qu'un 50-50 théorique qu'il faudrait changer à la main à chaque fois (principe n°4).
+const PAYER_DEFAUT = { max:'max', jm:'max', jojo:'jojo' }
+// Les 2 états courants du toggle par propriétaire, + une exception rare en lien texte
+// (principe n°4 : l'exception reste possible, elle ne s'affiche pas tant qu'on ne la
+// demande pas). Pas de toggle du tout pour "Max" : le payeur est toujours lui.
+const PAYER_UI = {
+  max:  null,
+  jm:   { onVal:'max', onLabel:'Toi', offVal:'50-50', offLabel:'50-50 (rien à Jojo)', altVal:'jojo', altLabel:'Jojo a payé cette fois' },
+  jojo: { onVal:'max', onLabel:'Toi (tu as une créance)', offVal:'jojo', offLabel:'Jojo (rien ne bouge)', altVal:null }
+}
+
+const propChip = p => '<span class="propchip p-'+p+'"><i></i>'+PROP_LABEL[p]+'</span>'
+let jojoSolde = 0   // mémorisé au chargement du tableau de bord, réutilisé dans le Bilan
 
 async function enterApp(session){
   appEntered = true
@@ -516,7 +577,10 @@ async function enterApp(session){
   $('#whoami').textContent = email
   $('#whoami2').textContent = (email.split('@')[0] || '')
   $('#ava').textContent = (email[0]||'M').toUpperCase()
-  switchTab('accueil')
+  // Reprendre là où Max en était plutôt que de toujours rouvrir sur l'accueil
+  let lastTab='accueil'; try{ lastTab = localStorage.getItem('last_tab') || 'accueil' }catch(e){}
+  if(!TABS.includes(lastTab)) lastTab='accueil'
+  switchTab(lastTab)
   await refreshAll()
 }
 
@@ -527,6 +591,8 @@ function switchTab(name){
   if(name==='stock') loadStock()
   if(name==='ventes') loadVentes()
   if(name==='jojo') loadJojo()
+  if(name==='bilan') loadBilan()
+  try{ localStorage.setItem('last_tab', name) }catch(e){}
 }
 document.querySelectorAll('.tab').forEach(b=> b.addEventListener('click', ()=>switchTab(b.dataset.tab)) )
 
@@ -537,36 +603,52 @@ async function loadDashboard(){
   if(error) return
   const d = data || {}
   const signed = (el,val,small)=>{ const n=Number(val||0); el.textContent=eur(n); el.className='v '+(small?'small ':'')+(n>0?'pos':n<0?'neg':'') }
-  signed($('#kpi-gain-stock'), d.gain_avec_stock)
-  $('#kpi-gain-hors').textContent = 'Hors stock : '+eur(d.gain_hors_stock)
+  // "Résultat" affiché à l'accueil et dans la barre du haut = le résultat NET de Max
+  // (sa caisse + 50% de la caisse JM, §12) — jamais le cumul brut Max+JM, qui donnerait
+  // à Max l'illusion de posséder 100% du résultat JM. C'est la même valeur que "Résultat
+  // net Max" dans Bilan : un seul chiffre, affiché à trois endroits, jamais deux chiffres
+  // différents pour la même question (source de la confusion remontée par Max).
+  signed($('#kpi-gain-stock'), d.resultat_net_max)
+  $('#kpi-gain-hors').textContent = 'Hors stock : '+eur(d.resultat_net_max_hors_stock)
   $('#kpi-stock-max').textContent = (d.stock_max??0)+' voiture'+((d.stock_max||0)>1?'s':'')
   $('#kpi-stock-jm').textContent  = (d.stock_jm??0)+' voiture'+((d.stock_jm||0)>1?'s':'')
   $('#kpi-valeur').textContent = eur(d.valeur_stock)
-  signed($('#kpi-net'), d.resultat_net_max, true)
+  signed($('#kpi-net'), d.resultat_net_max)
   const j = Number(d.solde_jojo||0)
+  jojoSolde = j
   $('#kpi-jojo').textContent = eur(Math.abs(j)); $('#kpi-jojo').className = 'v '+(j>0?'neg':j<0?'pos':'')
   $('#jojo-sense').textContent = j>0 ? 'Tu dois ça à Jojo' : j<0 ? 'Jojo te doit ça' : 'À jour'
-  $('#sb-res').textContent = eur(d.gain_avec_stock)
+  $('#sb-res').textContent = eur(d.resultat_net_max)
   $('#sb-stock').textContent = eur(d.valeur_stock)
   $('#sb-jojo').textContent = (j===0?'à jour':(j>0?'+':'')+eur(j))
 }
 
 let stockCache = []
+// Regroupé par caisse (Max / JM), chacune sous son en-tête coloré — pour voir d'un
+// coup d'œil ce qui est à toi et ce qui est commun, sans lire chaque ligne (Jojo
+// n'apparaît jamais ici : v_stock l'exclut déjà, §7).
 async function loadStock(){
   const { data } = await supabase.from('v_stock').select('*').order('date_entree',{ascending:false})
   stockCache = data||[]
   const box=$('#stock-list'); box.innerHTML=''; show($('#stock-empty'), stockCache.length===0)
-  stockCache.forEach(a=>{
-    const el=document.createElement('div'); el.className='row'; el.style.cursor='pointer'
-    el.innerHTML='<div class="l"><b>'+esc(a.nom||a.ref)+'</b><small>Set '+esc(a.numero_set_lego||a.ref)+' · '+ETAT_LABEL[a.etat]+(a.minifig?' · minifig':'')+' · '+PROP_LABEL[a.proprietaire]+'</small></div>'
-      +'<div class="r">'+eur(a.cout_achat)+'</div>'
-    el.addEventListener('click', ()=>openStockDetail(a))
-    box.appendChild(el)
+  ;[['max','Ta caisse'], ['jm','Caisse JM']].forEach(([prop])=>{
+    const items = stockCache.filter(a=>a.proprietaire===prop)
+    if(items.length===0) return
+    const head=document.createElement('div'); head.className='stockgroup'
+    head.innerHTML=propChip(prop)+'<small>'+items.length+' voiture'+(items.length>1?'s':'')+'</small>'
+    box.appendChild(head)
+    items.forEach(a=>{
+      const el=document.createElement('div'); el.className='row'; el.style.cursor='pointer'
+      el.innerHTML='<div class="l"><b>'+esc(a.nom||a.ref)+'</b><small>Set '+esc(a.numero_set_lego||a.ref)+' · '+ETAT_LABEL[a.etat]+(a.minifig?' · minifig':'')+'</small></div>'
+        +'<div class="r">'+eur(a.cout_achat)+'</div>'
+      el.addEventListener('click', ()=>openStockDetail(a))
+      box.appendChild(el)
+    })
   })
 }
 function openStockDetail(a){
   $('#sd-nom').textContent = a.nom || a.ref
-  $('#sd-meta').textContent = 'Set '+(a.numero_set_lego||a.ref)+' · Réf. '+a.ref+' · '+ETAT_LABEL[a.etat]+(a.minifig?' · minifig':'')+' · '+PROP_LABEL[a.proprietaire]
+  $('#sd-meta').innerHTML = 'Set '+esc(a.numero_set_lego||a.ref)+' · Réf. '+esc(a.ref)+' · '+ETAT_LABEL[a.etat]+(a.minifig?' · minifig':'')+' · '+propChip(a.proprietaire)
   $('#sd-achat').textContent = eur(a.cout_achat)
   $('#sd-jours').textContent = (a.jours_en_stock??'—')+(a.jours_en_stock!=null?' j':'')
   $('#sd-affiche').textContent = eur(a.prix_affiche)
@@ -581,11 +663,28 @@ async function loadVentes(){
   const rows=data||[]; const box=$('#ventes-list'); box.innerHTML=''; show($('#ventes-empty'), rows.length===0)
   rows.forEach(v=>{
     const m=Number(v.marge_reelle||0); const el=document.createElement('div'); el.className='row'
-    el.innerHTML='<div class="l"><b>'+esc(v.nom||v.ref)+'</b><small>'+(v.date_vente||'')+'</small></div>'
+    el.innerHTML='<div class="l"><b>'+esc(v.nom||v.ref)+'</b><small>'+(v.date_vente||'')+' · '+propChip(v.proprietaire)+'</small></div>'
       +'<div class="r">'+eur(v.montant_encaisse)+'<small style="font-weight:600;color:'+(m>=0?'var(--good)':'var(--bad)')+'">marge '+eur(m)+'</small></div>'
     box.appendChild(el)
   })
 }
+// Bilan : les 3 poches, jamais mélangées — chacune répond à sa propre question
+// (ce qui est à toi / ce qui est commun / ce que vous vous devez).
+async function loadBilan(){
+  const { data } = await supabase.from('v_resultat_par_caisse').select('*')
+  const rows = data||[]
+  const max = rows.find(r=>r.proprietaire==='max') || {}
+  const jm  = rows.find(r=>r.proprietaire==='jm')  || {}
+  const signed=(id,val)=>{ const el=$('#'+id); const n=Number(val||0); el.textContent=eur(n); el.className='v '+(n>0?'pos':n<0?'neg':'') }
+  signed('bilan-max-net', max.gain_avec_stock)
+  $('#bilan-max-detail').textContent = eur(max.valeur_stock||0)+' de stock en attente de vente'
+  signed('bilan-jm-total', jm.gain_avec_stock)
+  $('#bilan-jm-detail').textContent = 'Ta part : '+eur((Number(jm.gain_avec_stock||0))/2)+' · '+eur(jm.valeur_stock||0)+' de stock'
+  const j = jojoSolde
+  $('#bilan-jojo-solde').textContent = eur(Math.abs(j)); $('#bilan-jojo-solde').className = 'v '+(j>0?'neg':j<0?'pos':'')
+  $('#bilan-jojo-sense').textContent = (j>0?'Tu dois ça à Jojo':j<0?'Jojo te doit ça':'À jour')+' · touche pour le détail →'
+}
+$('#bilan-jojo-card').addEventListener('click', ()=>switchTab('jojo'))
 async function loadJojo(){
   const { data } = await supabase.from('compte_courant_jojo').select('*').order('date_mouvement',{ascending:false}).order('id',{ascending:false})
   const rows=data||[]; const box=$('#jojo-moves'); box.innerHTML=''; show($('#jojo-empty'), rows.length===0)
@@ -617,6 +716,7 @@ function wireSeg(sel, onPick){ const c=$(sel); c.addEventListener('click', e=>{ 
 /* ================= AJOUTER — PARCOURS UNIFIÉ ================= */
 // mode = 'achat' | 'vente'. Une seule liste de voitures, un seul écran de montant total.
 let mode = 'achat'
+let addStep = 'cars'    // 'cars' (étape 1) ou 'total' (étape 2) — pour que Retour remonte d'un cran, pas jusqu'à l'accueil
 let cars = []           // achat : {ref,nom,etat,minifig,poids,poidsManuel}
 let saleCars = []        // vente : lignes choisies depuis le stock {id,nom,ref,etat,proprietaire,poids}
 let coefCache = null
@@ -630,10 +730,13 @@ async function getCoefficients(){
 
 function openAdd(m){
   mode = m
+  addStep = 'cars'
   $('#add-title').textContent = m==='achat' ? 'Achat' : 'Vente'
   cars = []; saleCars = []
   renderCarsList()
   resetCarForm()
+  // Repart de zéro à chaque nouvel achat : pas d'héritage du propriétaire/payeur précédent
+  aProp='max'; aPayer=PAYER_DEFAUT.max; segPick($('#a-prop'),'max'); renderPayerUI()
   show($('#c-achat-only'), m==='achat')
   ;['add-cars','add-achat-total','add-vente-total'].forEach(s=>show($('#'+s), s==='add-cars'))
   $('#cars-next').textContent = m==='achat' ? 'Continuer' : 'Continuer'
@@ -641,7 +744,17 @@ function openAdd(m){
 }
 $('#btn-achat').addEventListener('click', ()=>openAdd('achat'))
 $('#btn-vente').addEventListener('click', ()=>openAdd('vente'))
-$('#add-close').addEventListener('click', ()=>view('app'))
+// Retour = revenir à l'écran juste avant, pas directement à l'accueil (bug remonté par Max) :
+// depuis l'étape 2 (montant total), un tap revient à l'étape 1 (liste des voitures) ;
+// c'est seulement depuis l'étape 1 qu'un tap referme le parcours et revient à l'app.
+$('#add-close').addEventListener('click', ()=>{
+  if(addStep==='total'){
+    addStep='cars'
+    show($('#add-achat-total'),false); show($('#add-vente-total'),false); show($('#add-cars'),true)
+    return
+  }
+  view('app')
+})
 
 /* ---- recherche / choix d'un modèle (achat) ---- */
 let catalogueCache=null
@@ -659,10 +772,21 @@ async function cRunSearch(){
   const q=$('#c-ref').value.trim(); const box=$('#c-results'); show($('#c-chosen'), false); show($('#c-new'), false)
   if(!q){ box.innerHTML=''; return }
   const nq=norm(q); const cat=await getCatalogue()
-  const hits=cat.filter(c=>norm(c.nom+' '+(c.marque||'')+' '+c.ref).includes(nq)).slice(0,5)
+  // La recherche matche aussi le numéro de la boîte (numero_set_lego), pas seulement le nom/réf
+  // de chaque voiture — sinon taper le numéro du set à 2-3 voitures ne trouvait rien (bug remonté par Max).
+  const hits=cat.filter(c=>norm(c.nom+' '+(c.marque||'')+' '+c.ref+' '+(c.numero_set_lego||'')).includes(nq)).slice(0,6)
   box.innerHTML=''
+  const setsShown = new Set()
   hits.forEach(c=>{
     const freres = cat.filter(x=>x.numero_set_lego && x.numero_set_lego===c.numero_set_lego)
+    // Le set contient plusieurs voitures : une ligne pour tout ajouter d'un coup,
+    // en plus des lignes individuelles ci-dessous (chaque voiture reste ajoutable seule).
+    if(mode==='achat' && freres.length>1 && !setsShown.has(c.numero_set_lego)){
+      setsShown.add(c.numero_set_lego)
+      const setEl=document.createElement('div'); setEl.className='result'; setEl.style.borderColor='var(--accent)'
+      setEl.innerHTML='<div><b>＋ Set complet '+esc(c.numero_set_lego)+'</b><small>'+freres.map(f=>esc(f.nom)).join(' · ')+'</small></div><small>'+freres.length+' voitures</small>'
+      setEl.addEventListener('click', ()=>addWholeSet(freres)); box.appendChild(setEl)
+    }
     const partage = freres.length>1 ? ' · '+(freres.findIndex(x=>x.ref===c.ref)+1)+'/'+freres.length+' dans la boîte' : ''
     const el=document.createElement('div'); el.className='result'
     el.innerHTML='<div><b>'+esc(c.nom)+'</b> <small>Set '+esc(c.numero_set_lego||c.ref)+'</small></div><small>'+(c.prix_scelle_affiche?eur(c.prix_scelle_affiche)+' scellé'+partage:'Réf. '+esc(c.ref))+'</small>'
@@ -671,6 +795,26 @@ async function cRunSearch(){
   const nu=document.createElement('div'); nu.className='result new'
   nu.textContent='＋ Nouvelle référence « '+q+' »'
   nu.addEventListener('click', ()=>{ $('#cn-nom').value=q; show($('#c-new'), true); box.innerHTML='' }); box.appendChild(nu)
+}
+
+// Ajoute d'un coup toutes les voitures d'un même set (état Nu, minifig par défaut du catalogue —
+// les mêmes valeurs par défaut qu'un ajout individuel). Celles sans prix scellé sont ignorées :
+// il faudra les ajouter à la main pour saisir une estimation (cascade §10 niveau 4).
+async function addWholeSet(freres){
+  if(mode!=='achat') return
+  const coefs = await getCoefficients()
+  const coefScelle = coefs['etat:neuf_scelle'] || 1
+  const coefNu = coefs['etat:nu'] ?? 1
+  let ajoutees=0, ignorees=0
+  freres.forEach(c=>{
+    if(cars.some(x=>x.ref===c.ref)) return
+    if(!c.prix_scelle_affiche){ ignorees++; return }
+    const poids = Math.round((c.prix_scelle_affiche/coefScelle)*coefNu*100)/100
+    cars.push({ ref:c.ref, nom:c.nom, numeroSet:c.numero_set_lego, etat:'nu', minifig:!!c.minifig_defaut, poids })
+    ajoutees++
+  })
+  renderCarsList(); $('#c-results').innerHTML=''; $('#c-ref').value=''
+  flash((ajoutees||'Aucune')+' voiture'+(ajoutees>1?'s':'')+' ajoutée'+(ajoutees>1?'s':'')+(ignorees?(' · '+ignorees+' à ajouter à la main'):''))
 }
 function cChoose(c){
   cSel=c
@@ -742,7 +886,7 @@ $('#c-ref').addEventListener('input', ()=>{
   const already = new Set(saleCars.map(c=>c.id))
   stockCache.filter(a=>!already.has(a.id) && norm((a.nom||'')+' '+(a.marque||'')+' '+a.ref).includes(nq)).slice(0,6).forEach(a=>{
     const el=document.createElement('div'); el.className='result'
-    el.innerHTML='<div><b>'+esc(a.nom||a.ref)+'</b> <small>Set '+esc(a.numero_set_lego||a.ref)+' · '+ETAT_LABEL[a.etat]+' · '+PROP_LABEL[a.proprietaire]+'</small></div><small>'+eur(a.cout_achat)+'</small>'
+    el.innerHTML='<div><b>'+esc(a.nom||a.ref)+'</b> <small>Set '+esc(a.numero_set_lego||a.ref)+' · '+ETAT_LABEL[a.etat]+' · '+propChip(a.proprietaire)+'</small></div><small>'+eur(a.cout_achat)+'</small>'
     el.addEventListener('click', ()=>{
       saleCars.push({ id:a.id, nom:a.nom||a.ref, ref:a.ref, numeroSet:a.numero_set_lego, etat:a.etat, proprietaire:a.proprietaire, poids: Number(a.valeur_estimee||a.cout_achat||1) })
       $('#c-ref').value=''; box.innerHTML=''; renderCarsList()
@@ -757,7 +901,7 @@ function renderCarsList(){
   list.forEach((c,i)=>{
     const el=document.createElement('div'); el.className='row'
     const setTxt = 'Set '+(c.numeroSet||c.numero_set_lego||c.ref)+' · '
-    const meta = mode==='achat' ? (setTxt+ETAT_LABEL[c.etat]+(c.minifig?' · minifig':'')+' · poids '+eur(c.poids)) : (setTxt+ETAT_LABEL[c.etat]+' · '+PROP_LABEL[c.proprietaire])
+    const meta = mode==='achat' ? (setTxt+ETAT_LABEL[c.etat]+(c.minifig?' · minifig':'')+' · poids '+eur(c.poids)) : (setTxt+ETAT_LABEL[c.etat]+' · '+propChip(c.proprietaire))
     el.innerHTML='<div class="l"><b>'+esc(c.nom)+'</b><small>'+meta+'</small></div>'
     const rm=document.createElement('button'); rm.className='linkish'; rm.textContent='retirer'
     rm.addEventListener('click', ()=>{ list.splice(i,1); renderCarsList() }); el.appendChild(rm)
@@ -769,18 +913,37 @@ function renderCarsList(){
 $('#cars-next').addEventListener('click', ()=>{
   const list = mode==='achat' ? cars : saleCars
   if(list.length===0){ flash(mode==='achat' ? 'Ajoute au moins une voiture' : 'Choisis au moins une voiture'); return }
+  addStep='total'
   if(mode==='achat'){ show($('#add-cars'),false); show($('#add-achat-total'),true); buildAchatRecap() }
   else { show($('#add-cars'),false); show($('#add-vente-total'),true); buildVenteRecap() }
 })
-$('#a-back').addEventListener('click', ()=>{ show($('#add-achat-total'),false); show($('#add-cars'),true) })
-$('#v-back').addEventListener('click', ()=>{ show($('#add-vente-total'),false); show($('#add-cars'),true) })
+$('#a-back').addEventListener('click', ()=>{ addStep='cars'; show($('#add-achat-total'),false); show($('#add-cars'),true) })
+$('#v-back').addEventListener('click', ()=>{ addStep='cars'; show($('#add-vente-total'),false); show($('#add-cars'),true) })
 
 /* ---- Étape 2 (Achat) ---- */
-let aProp='max', aPayer='max', aPayerTouched=false
+let aProp='max', aPayer='max'
 segPick($('#a-prop'),'max')
-wireSeg('#a-prop', v=>{ aProp=v; if(!aPayerTouched){ aPayer=PAYER_DEFAUT[v]; $('#a-payer-label').textContent=payerTxt(aPayer) } })
-wireSeg('#a-payer', v=>{ aPayer=v; aPayerTouched=true; $('#a-payer-label').textContent=payerTxt(v) })
-$('#a-payer-edit').addEventListener('click', ()=>{ const s=$('#a-payer'); const open=!s.classList.contains('hidden'); show(s,!open); if(!open) segPick(s, aPayer) })
+function renderPayerUI(){
+  const cfg = PAYER_UI[aProp]
+  show($('#a-payer-row'), !!cfg)
+  if(!cfg) return
+  const isOn = aPayer===cfg.onVal
+  $('#a-payer-toggle').classList.toggle('on', isOn)
+  $('#a-payer-toggle').setAttribute('aria-checked', String(isOn))
+  $('#a-payer-label').textContent = isOn ? cfg.onLabel : cfg.offLabel
+  show($('#a-payer-alt'), !!cfg.altVal && aPayer!==cfg.altVal)
+  if(cfg.altVal) $('#a-payer-alt').textContent = cfg.altLabel
+}
+wireSeg('#a-prop', v=>{ aProp=v; aPayer=PAYER_DEFAUT[v]; renderPayerUI() })
+$('#a-payer-toggle').addEventListener('click', ()=>{
+  const cfg=PAYER_UI[aProp]; if(!cfg) return
+  aPayer = (aPayer===cfg.onVal) ? cfg.offVal : cfg.onVal
+  renderPayerUI()
+})
+$('#a-payer-alt').addEventListener('click', ()=>{
+  const cfg=PAYER_UI[aProp]; if(!cfg || !cfg.altVal) return
+  aPayer = cfg.altVal; renderPayerUI()
+})
 
 function achatCouts(total){
   const sum=cars.reduce((a,c)=>a+c.poids,0) || 1; let acc=0

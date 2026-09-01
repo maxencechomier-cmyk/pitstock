@@ -563,7 +563,7 @@ const PAYER_DEFAUT = { max:'max', jm:'max', jojo:'jojo' }
 // demande pas). Pas de toggle du tout pour "Max" : le payeur est toujours lui.
 const PAYER_UI = {
   max:  null,
-  jm:   { onVal:'max', onLabel:'Toi', offVal:'50-50', offLabel:'50-50 (rien à Jojo)', altVal:'jojo', altLabel:'Jojo a payé cette fois' },
+  jm:   { onVal:'max', onLabel:'Toi', offVal:'50-50', offLabel:'50-50 (rien à Jojo)', altVal:'jojo', altLabel:'Jojo a payé cette fois', altActiveLabel:'Jojo (il a tout payé)' },
   jojo: { onVal:'max', onLabel:'Toi (tu as une créance)', offVal:'jojo', offLabel:'Jojo (rien ne bouge)', altVal:null }
 }
 
@@ -612,7 +612,6 @@ async function loadDashboard(){
   $('#kpi-gain-hors').textContent = 'Hors stock : '+eur(d.resultat_net_max_hors_stock)
   $('#kpi-stock-max').textContent = (d.stock_max??0)+' voiture'+((d.stock_max||0)>1?'s':'')
   $('#kpi-stock-jm').textContent  = (d.stock_jm??0)+' voiture'+((d.stock_jm||0)>1?'s':'')
-  $('#kpi-valeur').textContent = eur(d.valeur_stock)
   signed($('#kpi-net'), d.resultat_net_max)
   const j = Number(d.solde_jojo||0)
   jojoSolde = j
@@ -927,12 +926,22 @@ function renderPayerUI(){
   const cfg = PAYER_UI[aProp]
   show($('#a-payer-row'), !!cfg)
   if(!cfg) return
+  const inAlt = !!cfg.altVal && aPayer===cfg.altVal
   const isOn = aPayer===cfg.onVal
+  // Le cas rare (Jojo a tout payé) n'est ni "Toi" ni "50-50" : le toggle binaire ne peut
+  // pas le représenter sans mentir. On le masque le temps que ce cas est actif et on
+  // l'indique en toutes lettres, avec un moyen clair de revenir en arrière.
+  show($('#a-payer-toggle'), !inAlt)
   $('#a-payer-toggle').classList.toggle('on', isOn)
   $('#a-payer-toggle').setAttribute('aria-checked', String(isOn))
-  $('#a-payer-label').textContent = isOn ? cfg.onLabel : cfg.offLabel
-  show($('#a-payer-alt'), !!cfg.altVal && aPayer!==cfg.altVal)
-  if(cfg.altVal) $('#a-payer-alt').textContent = cfg.altLabel
+  $('#a-payer-label').textContent = inAlt ? cfg.altActiveLabel : (isOn ? cfg.onLabel : cfg.offLabel)
+  if(inAlt){
+    show($('#a-payer-alt'), true)
+    $('#a-payer-alt').textContent = 'Annuler — revenir à « '+cfg.onLabel+' »'
+  } else {
+    show($('#a-payer-alt'), !!cfg.altVal)
+    if(cfg.altVal) $('#a-payer-alt').textContent = cfg.altLabel
+  }
 }
 wireSeg('#a-prop', v=>{ aProp=v; aPayer=PAYER_DEFAUT[v]; renderPayerUI() })
 $('#a-payer-toggle').addEventListener('click', ()=>{
@@ -942,7 +951,8 @@ $('#a-payer-toggle').addEventListener('click', ()=>{
 })
 $('#a-payer-alt').addEventListener('click', ()=>{
   const cfg=PAYER_UI[aProp]; if(!cfg || !cfg.altVal) return
-  aPayer = cfg.altVal; renderPayerUI()
+  aPayer = (aPayer===cfg.altVal) ? cfg.onVal : cfg.altVal
+  renderPayerUI()
 })
 
 function achatCouts(total){

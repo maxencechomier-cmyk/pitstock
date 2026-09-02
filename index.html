@@ -122,17 +122,17 @@
   .foot{color:var(--faint);font-size:11px;text-align:center;margin-top:auto;padding-top:14px}
 
   .tabbar{position:fixed;left:0;right:0;bottom:0;display:flex;align-items:flex-end;justify-content:space-around;
-    padding:8px 6px max(8px,env(safe-area-inset-bottom));background:var(--glass);border-top:1px solid var(--line);
+    padding:5px 6px max(5px,env(safe-area-inset-bottom));background:var(--glass);border-top:1px solid var(--line);
     backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);z-index:6}
-  .tab{flex:1;background:none;border:0;color:var(--faint);display:flex;flex-direction:column;align-items:center;gap:3px;
-    font-size:10px;font-weight:600;cursor:pointer;padding:4px 2px}
-  .tab svg{width:24px;height:24px;display:block}
+  .tab{flex:1;background:none;border:0;color:var(--faint);display:flex;flex-direction:column;align-items:center;gap:2px;
+    font-size:9px;font-weight:600;cursor:pointer;padding:2px 2px}
+  .tab svg{width:20px;height:20px;display:block}
   .tab.on{color:var(--accent)}
-  .tab.center{transform:translateY(-8px);color:var(--muted)}
+  .tab.center{transform:translateY(-5px);color:var(--muted)}
   .tab.center.on{color:var(--accent)}
-  .cbadge{width:52px;height:52px;border-radius:50%;background:linear-gradient(180deg,var(--accent),var(--accent2));
-    display:grid;place-items:center;box-shadow:0 8px 20px -6px rgba(255,140,20,.75);margin-bottom:2px}
-  .cbadge svg{width:26px;height:26px;stroke:var(--onaccent)}
+  .cbadge{width:44px;height:44px;border-radius:50%;background:linear-gradient(180deg,var(--accent),var(--accent2));
+    display:grid;place-items:center;box-shadow:0 6px 16px -6px rgba(255,140,20,.75);margin-bottom:2px}
+  .cbadge svg{width:22px;height:22px;stroke:var(--onaccent)}
 
   .sheet{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;z-index:20;
     backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}

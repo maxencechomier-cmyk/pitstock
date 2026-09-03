@@ -91,7 +91,7 @@
   .gear{background:none;border:0;color:var(--muted);padding:6px;cursor:pointer;flex:none}
   .gear svg{width:22px;height:22px;display:block}
 
-  .content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;padding:14px 14px 96px;width:100%;max-width:520px;margin:0 auto}
+  .content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;padding:14px 14px calc(96px + env(safe-area-inset-bottom));width:100%;max-width:520px;margin:0 auto}
   .panel{display:flex;flex-direction:column;gap:13px;
     transition:opacity .22s cubic-bezier(.22,1,.36,1), transform .22s cubic-bezier(.22,1,.36,1)}
   .panel.panel-enter{opacity:0;transform:translateY(10px)}
@@ -124,7 +124,7 @@
   .soon{border-radius:18px;padding:16px;border:1px dashed var(--line);color:var(--faint);font-size:13px;text-align:center;line-height:1.5}
   .foot{color:var(--faint);font-size:11px;text-align:center;margin-top:auto;padding-top:14px}
 
-  .tabbar{position:fixed;left:14px;right:14px;bottom:10px;
+  .tabbar{position:fixed;left:14px;right:14px;bottom:max(22px, calc(env(safe-area-inset-bottom) + 14px));
     display:flex;align-items:flex-end;justify-content:space-around;
     padding:6px 8px;background:var(--glass);border:1px solid var(--glass-brd);border-radius:26px;
     backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);

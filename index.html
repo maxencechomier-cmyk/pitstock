@@ -1036,7 +1036,7 @@ boot()
 
 <!-- ═══ PANNEAU DE DIAGNOSTIC TEMPORAIRE — à retirer une fois la cause trouvée ═══ -->
 <div id="diag" style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#ff0040;color:#fff;
-  font:11px/1.5 ui-monospace,Menlo,monospace;padding:6px 8px;padding-top:max(6px,env(safe-area-inset-top));
+  font:9px/1.45 ui-monospace,Menlo,monospace;padding:4px 6px;padding-top:max(4px,env(safe-area-inset-top));
   white-space:pre-wrap;pointer-events:none;"></div>
 <script>
 (function(){
@@ -1049,23 +1049,26 @@ boot()
     document.body.removeChild(probe)
     return v
   }
+  function visible(id){ var el = document.getElementById(id); return el && !el.classList.contains('hidden') }
   function readAll(){
     var app = document.getElementById('app')
     var appRect = app ? app.getBoundingClientRect() : null
     var tabbar = document.querySelector('.tabbar')
     var tabRect = tabbar ? tabbar.getBoundingClientRect() : null
+    var content = document.querySelector('.content')
+    var contentRect = content ? content.getBoundingClientRect() : null
+    var activeTab = document.querySelector('.tab.on')
     var vv = window.visualViewport
     var lines = [
-      'DIAGNOSTIC PITSTOCK — à renvoyer en capture, tout en haut de l’écran',
+      'DIAGNOSTIC PITSTOCK v2 — capture tout en haut de l’écran, EN ÉTANT sur l’onglet Stock (avec des voitures affichées)',
+      'écran affiché = ' + (visible('login') ? 'connexion' : visible('app') ? 'app' : visible('boot') ? 'chargement' : '?') + '   onglet actif = ' + (activeTab ? activeTab.dataset.tab : '—'),
       'standalone (mode app icône) = ' + (window.navigator.standalone === true ? 'OUI' : window.navigator.standalone === false ? 'NON ⚠️' : 'inconnu'),
-      'window.innerHeight = ' + px(window.innerHeight),
-      'visualViewport.height = ' + (vv ? px(vv.height) : 'indisponible'),
-      'document.documentElement.clientHeight = ' + px(document.documentElement.clientHeight),
+      'window.innerHeight = ' + px(window.innerHeight) + '   visualViewport.height = ' + (vv ? px(vv.height) : '—'),
       'safe-area-inset-top = ' + px(safeAreaPx('top')) + 'px   safe-area-inset-bottom = ' + px(safeAreaPx('bottom')) + 'px',
-      '#app hauteur réelle = ' + (appRect ? px(appRect.height) : '?') + 'px   #app bas réel = ' + (appRect ? px(appRect.bottom) : '?') + 'px',
-      'écart bas écran − bas #app = ' + (appRect && window.innerHeight ? px(window.innerHeight - appRect.bottom) + 'px' : '?'),
-      'barre d’onglets bas = ' + (tabRect ? px(tabRect.bottom) : '?') + 'px   écart bas écran − bas barre = ' + (tabRect && window.innerHeight ? px(window.innerHeight - tabRect.bottom) + 'px' : '?'),
-      'devicePixelRatio = ' + window.devicePixelRatio + '   screen = ' + screen.width + '×' + screen.height
+      '#app haut/bas = ' + (appRect ? px(appRect.top)+'/'+px(appRect.bottom) : '?') + '   hauteur = ' + (appRect ? px(appRect.height) : '?') + 'px',
+      '.content haut/bas = ' + (contentRect ? px(contentRect.top)+'/'+px(contentRect.bottom) : '?'),
+      'barre d’onglets haut/bas = ' + (tabRect ? px(tabRect.top)+'/'+px(tabRect.bottom) : '?') + '   écart bas écran → bas barre = ' + (tabRect && window.innerHeight ? px(window.innerHeight - tabRect.bottom) + 'px' : '?'),
+      'devicePixelRatio = ' + window.devicePixelRatio + '   screen = ' + screen.width + '×' + screen.height + '   ' + new Date().toLocaleTimeString('fr-FR')
     ]
     document.getElementById('diag').textContent = lines.join('\n')
   }
@@ -1073,7 +1076,7 @@ boot()
   window.addEventListener('resize', readAll)
   window.addEventListener('orientationchange', readAll)
   if(window.visualViewport) window.visualViewport.addEventListener('resize', readAll)
-  setTimeout(readAll, 800)  // relit une fois l'app réellement chargée (après boot())
+  setInterval(readAll, 400)  // relit en continu — plus de lecture figée avant la fin du chargement
 })()
 </script>
 </body>

@@ -126,12 +126,16 @@
   .soon{border-radius:18px;padding:16px;border:1px dashed var(--line);color:var(--faint);font-size:13px;text-align:center;line-height:1.5}
   .foot{color:var(--faint);font-size:11px;text-align:center;margin-top:auto;padding-top:14px}
 
-  .tabbar{position:fixed;left:14px;right:14px;bottom:0;
+  .tabbar{position:fixed;left:0;right:0;bottom:0;
     display:flex;align-items:flex-end;justify-content:space-around;
     padding:6px 8px calc(6px + env(safe-area-inset-bottom)) 8px;
-    background:var(--glass);border:1px solid var(--glass-brd);border-bottom:none;border-radius:26px 26px 0 0;
+    background:linear-gradient(180deg,rgba(13,13,15,.14) 0%,rgba(13,13,15,.55) 42%,rgba(11,11,12,.92) 68%,rgba(9,9,10,1) 100%);
+    border:0;border-radius:0;
     backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);
     box-shadow:var(--shadow);z-index:6}
+  /* Ligne de scellement : signale que la barre est une frontière voulue, pas un accident de mise en page */
+  .tabbar::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;
+    background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.85;pointer-events:none}
   .tab{flex:1;background:none;border:0;color:var(--faint);display:flex;flex-direction:column;align-items:center;gap:2px;
     font-size:8px;font-weight:600;cursor:pointer;padding:2px 2px;transition:color .18s ease}
   .tab svg{width:18px;height:18px;display:block;transition:transform .18s cubic-bezier(.34,1.56,.64,1)}

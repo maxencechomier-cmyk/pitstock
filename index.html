@@ -91,10 +91,9 @@
   .gear{background:none;border:0;color:var(--muted);padding:6px;cursor:pointer;flex:none}
   .gear svg{width:22px;height:22px;display:block}
 
-  .content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;padding:14px 14px calc(88px + env(safe-area-inset-bottom) * .55);width:100%;max-width:520px;margin:0 auto}
-  /* Réserve = hauteur réelle de la barre (14px de padding haut + 62px d'icônes/puces + 55% de la zone
-     de sécurité, round 11) + 12px de dégagement pour que la dernière ligne finisse au net,
-     au-dessus du fondu, et jamais dans la zone floutée. */
+  .content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;padding:14px 14px calc(76px + env(safe-area-inset-bottom));width:100%;max-width:520px;margin:0 auto}
+  /* 76px = hauteur propre de .tabbar depuis la ligne d'accent (padding haut 14px + icônes/puces agrandies + 0 padding bas superflu, round 10)
+     + marge de sécurité, pour que le dernier élément de liste ne soit jamais caché derrière la barre. */
   .panel{display:flex;flex-direction:column;gap:13px;
     transition:opacity .22s cubic-bezier(.22,1,.36,1), transform .22s cubic-bezier(.22,1,.36,1)}
   .panel.panel-enter{opacity:0;transform:translateY(10px)}
@@ -123,24 +122,18 @@
   .card .v{font-size:22px;font-weight:750;margin-top:6px}
   .card .v.small{font-size:18px}
   .pos{color:var(--good)} .neg{color:var(--bad)}
+  .chart-card canvas{width:100%;height:140px;display:block;touch-action:none;margin-top:10px;border-radius:12px}
 
   .soon{border-radius:18px;padding:16px;border:1px dashed var(--line);color:var(--faint);font-size:13px;text-align:center;line-height:1.5}
   .foot{color:var(--faint);font-size:11px;text-align:center;margin-top:auto;padding-top:14px}
 
   .tabbar{position:fixed;left:0;right:0;bottom:0;
     display:flex;align-items:flex-end;justify-content:space-around;
-    padding:14px 8px calc(env(safe-area-inset-bottom) * .55) 8px;
-    border:0;border-radius:0;z-index:6}
-  /* Le fond de la barre vit dans ce pseudo-élément, et pas sur .tabbar elle-même.
-     Raison : backdrop-filter est tout ou rien — posé sur la barre, le flou s'allume net
-     à son bord supérieur et dessine une ligne visible au défilement, qu'aucun dégradé
-     de couleur ne peut effacer. Ici le masque estompe le flou ET le voile ensemble.
-     Il déborde de 28px vers le haut pour allonger encore le fondu. */
-  .tabbar::after{content:"";position:absolute;inset:-28px 0 0 0;z-index:-1;pointer-events:none;
-    backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);
-    background:linear-gradient(180deg,rgba(10,10,11,0) 0%,rgba(10,10,11,.45) 42%,rgba(10,10,11,.88) 66%,rgba(10,10,11,1) 82%);
-    -webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.06) 14%,rgba(0,0,0,.24) 30%,rgba(0,0,0,.58) 48%,rgba(0,0,0,.88) 64%,#000 78%);
-    mask-image:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.06) 14%,rgba(0,0,0,.24) 30%,rgba(0,0,0,.58) 48%,rgba(0,0,0,.88) 64%,#000 78%)}
+    padding:14px 8px env(safe-area-inset-bottom) 8px;
+    background:linear-gradient(180deg,rgba(13,13,15,.03) 0%,rgba(13,13,15,.22) 20%,rgba(12,12,13,.68) 34%,rgba(10,10,11,.96) 48%,rgba(9,9,10,1) 62%,rgba(9,9,10,1) 100%);
+    border:0;border-radius:0;
+    backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);
+    box-shadow:var(--shadow);z-index:6}
   .tab{flex:1;background:rgba(255,255,255,.025);border:0;color:var(--faint);display:flex;flex-direction:column;align-items:center;gap:3px;
     font-size:8px;font-weight:600;cursor:pointer;padding:5px 3px;border-radius:16px;transition:color .18s ease,background .18s ease}
   .tab svg{width:20px;height:20px;display:block;transition:transform .18s cubic-bezier(.34,1.56,.64,1)}
@@ -298,32 +291,46 @@
         <div id="ventes-empty" class="empty hidden">Aucune vente enregistrée pour l'instant.</div>
       </div>
 
-      <!-- BILAN — les 3 poches séparées, pour ne jamais les mélanger -->
+      <!-- BILAN — Achats / Ventes en premier (vue d'ensemble claire), puis les 2 caisses (détail au clic) -->
       <div class="panel hidden" id="tab-bilan">
         <div class="paneltitle">Bilan</div>
 
-        <div class="card" style="border-color:rgba(255,176,31,.35)">
+        <div class="card">
+          <div class="k">Achats — total</div>
+          <div class="v" id="bilan-achats-total">—</div>
+          <div class="sub" id="bilan-achats-detail">—</div>
+        </div>
+
+        <div class="card">
+          <div class="k">Ventes — total</div>
+          <div class="v" id="bilan-ventes-total">—</div>
+          <div class="sub" id="bilan-ventes-detail">—</div>
+        </div>
+
+        <div class="card" id="bilan-max-card" style="border-color:rgba(255,176,31,.35);cursor:pointer">
           <div class="k"><span class="propchip p-max"><i></i>Toi</span> — ta caisse, à toi seul</div>
           <div class="v" id="bilan-max-net">—</div>
-          <div class="sub" id="bilan-max-detail">—</div>
+          <div class="sub" id="bilan-max-detail">Touche pour voir le détail →</div>
         </div>
 
-        <div class="card" style="border-color:rgba(79,141,255,.35)">
+        <div class="card" id="bilan-jm-card" style="border-color:rgba(79,141,255,.35);cursor:pointer">
           <div class="k"><span class="propchip p-jm"><i></i>JM</span> — commune avec Jojo, résultat partagé 50-50</div>
           <div class="v" id="bilan-jm-total">—</div>
-          <div class="sub" id="bilan-jm-detail">—</div>
-        </div>
-
-        <div class="card" id="bilan-jojo-card" style="border-color:rgba(139,147,167,.35);cursor:pointer">
-          <div class="k"><span class="propchip p-jojo"><i></i>Jojo</span> — l'ardoise entre vous deux</div>
-          <div class="v" id="bilan-jojo-solde">—</div>
-          <div class="sub" id="bilan-jojo-sense">Touche pour voir le détail →</div>
+          <div class="sub" id="bilan-jm-detail">Touche pour voir le détail →</div>
         </div>
 
         <div class="hero" style="text-align:center;margin-top:2px">
           <div class="k">Résultat net Max (avec stock)</div>
           <div class="v" id="kpi-net">—</div>
-          <div class="sub">Ta caisse + la moitié du résultat JM — c'est le seul des trois chiffres ci-dessus qui dit ce qui est vraiment à toi.</div>
+          <div class="sub">Ta caisse + la moitié du résultat JM — c'est le seul des chiffres ci-dessus qui dit ce qui est vraiment à toi. La position de Jojo (qui doit quoi) est dans l'onglet Jojo.</div>
+        </div>
+
+        <div class="card chart-card">
+          <div class="k">Résultat net — évolution</div>
+          <div class="v" id="chart-value">—</div>
+          <div class="sub" id="chart-date">—</div>
+          <canvas id="chart-canvas"></canvas>
+          <div class="empty hidden" id="chart-empty" style="margin-top:10px">Historique qui démarre aujourd'hui — reviens dans quelques jours pour voir la courbe se dessiner. Aucune valeur passée n'est inventée.</div>
         </div>
       </div>
 
@@ -335,8 +342,15 @@
           <div class="v" id="kpi-jojo">—</div>
           <div class="sub" id="jojo-sense">—</div>
         </div>
+        <div class="paneltitle" style="margin-top:4px">Mouvements de l'ardoise</div>
         <div id="jojo-moves" class="list"></div>
         <div id="jojo-empty" class="empty hidden">Aucun mouvement. L'ardoise est vierge.</div>
+
+        <div class="paneltitle" style="margin-top:18px">Ses achats à lui</div>
+        <div id="jojo-achats" class="list"></div>
+        <div id="jojo-achats-empty" class="empty hidden">Aucun achat personnel de Jojo.</div>
+
+        <button class="btn secondary" id="btn-jojo-jm">Voir les opérations JM (Jojo à 50%)</button>
         <button class="btn secondary" id="btn-regler">Régler Jojo — bientôt</button>
       </div>
     </main>
@@ -359,10 +373,45 @@
           <div class="card"><div class="k">Prix d'achat</div><div class="v small" id="sd-achat">—</div></div>
           <div class="card"><div class="k">Jours en stock</div><div class="v small" id="sd-jours">—</div></div>
           <div class="card"><div class="k">Prix d'affichage</div><div class="v small" id="sd-affiche">—</div></div>
-          <div class="card"><div class="k">Prix plancher</div><div class="v small" id="sd-plancher">—</div></div>
+          <div class="card"><div class="k">Prix minimum</div><div class="v small" id="sd-plancher">—</div></div>
         </div>
         <div id="sd-note" class="note hidden"></div>
         <button class="linkish center" id="stock-sheet-close">Fermer</button>
+      </div>
+    </div>
+
+    <!-- Feuille « détail vente » -->
+    <div id="vente-sheet" class="sheet hidden">
+      <div class="sheetcard">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+          <div><b id="vd-nom" style="font-size:19px;display:block">—</b><small id="vd-meta" style="color:var(--muted)">—</small></div>
+        </div>
+        <div class="grid">
+          <div class="card"><div class="k">Montant encaissé</div><div class="v small" id="vd-montant">—</div></div>
+          <div class="card"><div class="k">Marge réalisée</div><div class="v small" id="vd-marge">—</div></div>
+        </div>
+        <div id="vd-jojo" class="hero hidden" style="text-align:center;margin-top:2px">
+          <div class="k">Compte de Jojo</div>
+          <div class="v" id="vd-jojo-montant">—</div>
+          <div class="sub" id="vd-jojo-sens">—</div>
+        </div>
+        <button class="linkish center" id="vente-sheet-close">Fermer</button>
+      </div>
+    </div>
+
+    <!-- Feuille « détail compte » — ouverte depuis le Bilan (Max / JM) -->
+    <div id="account-detail-sheet" class="sheet hidden">
+      <div class="sheetcard">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+          <b id="ad-title" style="font-size:19px">—</b>
+        </div>
+        <div class="paneltitle" style="margin-top:10px">Achats</div>
+        <div id="ad-achats" class="list"></div>
+        <div id="ad-achats-empty" class="empty hidden">Aucun achat.</div>
+        <div class="paneltitle" style="margin-top:14px">Ventes</div>
+        <div id="ad-ventes" class="list"></div>
+        <div id="ad-ventes-empty" class="empty hidden">Aucune vente.</div>
+        <button class="linkish center" id="account-detail-close">Fermer</button>
       </div>
     </div>
 
@@ -638,6 +687,21 @@ async function loadDashboard(){
   $('#sb-res').textContent = eur(d.resultat_net_max)
   $('#sb-stock').textContent = eur(d.valeur_stock)
   $('#sb-jojo').textContent = (j===0?'à jour':(j>0?'+':'')+eur(j))
+  snapshotToday(d)
+}
+// Un point d'historique par jour, capturé à chaque ouverture de l'app (pas de
+// cron côté Supabase gratuit). "upsert" met à jour la valeur du jour si l'app est
+// rouverte plusieurs fois — jamais deux lignes pour la même date. Aucune valeur
+// passée n'est reconstituée : la courbe démarre le jour du déploiement (règle
+// n°1 du projet — aucun chiffre inventé).
+async function snapshotToday(d){
+  const today = new Date().toISOString().slice(0,10)
+  try{
+    await supabase.from('historique_resultat').upsert(
+      { date_jour: today, resultat_net_max: Number(d.resultat_net_max||0), valeur_stock: Number(d.valeur_stock||0) },
+      { onConflict: 'date_jour' }
+    )
+  }catch(e){ /* pas grave si ça échoue une fois : demain reprend */ }
 }
 
 let stockCache = []
@@ -679,29 +743,164 @@ async function loadVentes(){
   const { data } = await supabase.from('v_ventes_detail').select('*').order('date_vente',{ascending:false})
   const rows=data||[]; const box=$('#ventes-list'); box.innerHTML=''; show($('#ventes-empty'), rows.length===0)
   rows.forEach(v=>{
-    const m=Number(v.marge_reelle||0); const el=document.createElement('div'); el.className='row'
+    const m=Number(v.marge_reelle||0); const el=document.createElement('div'); el.className='row'; el.style.cursor='pointer'
     el.innerHTML='<div class="l"><b>'+esc(v.nom||v.ref)+'</b><small>'+(v.date_vente||'')+' · '+propChip(v.proprietaire)+'</small></div>'
       +'<div class="r">'+eur(v.montant_encaisse)+'<small style="font-weight:600;color:'+(m>=0?'var(--good)':'var(--bad)')+'">marge '+eur(m)+'</small></div>'
+    el.addEventListener('click', ()=>openVenteDetail(v))
     box.appendChild(el)
   })
 }
-// Bilan : les 3 poches, jamais mélangées — chacune répond à sa propre question
-// (ce qui est à toi / ce qui est commun / ce que vous vous devez).
+// Détail d'une vente : toujours le montant + la marge ; pour une vente JM, en plus
+// qui a encaissé et la moitié qui bouge sur le compte de Jojo (§8, jamais la moitié
+// du résultat — voir la démonstration dans les instructions du projet).
+function openVenteDetail(v){
+  $('#vd-nom').textContent = v.nom || v.ref
+  $('#vd-meta').innerHTML = (v.date_vente||'')+' · '+propChip(v.proprietaire)+(v.proprietaire==='jm' ? ' · encaissé par '+(v.encaisse_par==='jojo'?'Jojo':'Toi') : '')
+  $('#vd-montant').textContent = eur(v.montant_encaisse)
+  const m = Number(v.marge_reelle||0)
+  $('#vd-marge').textContent = eur(m); $('#vd-marge').className = 'v small '+(m>=0?'pos':'neg')
+  const jojoBlock = $('#vd-jojo')
+  if(v.proprietaire==='jm'){
+    const moitie = Number(v.montant_encaisse||0)/2
+    show(jojoBlock, true)
+    if(v.encaisse_par==='jojo'){
+      $('#vd-jojo-montant').textContent = eur(moitie); $('#vd-jojo-montant').className='v pos'
+      $('#vd-jojo-sens').textContent = 'Jojo a encaissé cette vente : il te doit cette moitié.'
+    } else {
+      $('#vd-jojo-montant').textContent = eur(moitie); $('#vd-jojo-montant').className='v neg'
+      $('#vd-jojo-sens').textContent = 'Toi tu as encaissé cette vente : tu dois cette moitié à Jojo.'
+    }
+  } else { show(jojoBlock, false) }
+  show($('#vente-sheet'), true)
+}
+$('#vente-sheet-close').addEventListener('click', ()=>show($('#vente-sheet'), false))
+$('#vente-sheet').addEventListener('click', e=>{ if(e.target.id==='vente-sheet') show($('#vente-sheet'), false) })
+
+// Bilan : Achats et Ventes en vue d'ensemble (total + les 2 caisses), puis Max/JM
+// cliquables pour le détail complet (§6). Jojo n'a plus de carte séparée ici — sa
+// position vit dans son propre onglet (évite le doublon signalé).
 async function loadBilan(){
   const { data } = await supabase.from('v_resultat_par_caisse').select('*')
   const rows = data||[]
   const max = rows.find(r=>r.proprietaire==='max') || {}
   const jm  = rows.find(r=>r.proprietaire==='jm')  || {}
   const signed=(id,val)=>{ const el=$('#'+id); const n=Number(val||0); el.textContent=eur(n); el.className='v '+(n>0?'pos':n<0?'neg':'') }
+
+  const achatsTotal = Number(max.achats||0)+Number(jm.achats||0)
+  $('#bilan-achats-total').textContent = eur(achatsTotal)
+  $('#bilan-achats-detail').textContent = 'Toi : '+eur(max.achats||0)+' · JM : '+eur(jm.achats||0)
+
+  const ventesTotal = Number(max.ventes||0)+Number(jm.ventes||0)
+  $('#bilan-ventes-total').textContent = eur(ventesTotal)
+  $('#bilan-ventes-detail').textContent = 'Toi : '+eur(max.ventes||0)+' · JM : '+eur(jm.ventes||0)
+
   signed('bilan-max-net', max.gain_avec_stock)
-  $('#bilan-max-detail').textContent = eur(max.valeur_stock||0)+' de stock en attente de vente'
   signed('bilan-jm-total', jm.gain_avec_stock)
-  $('#bilan-jm-detail').textContent = 'Ta part : '+eur((Number(jm.gain_avec_stock||0))/2)+' · '+eur(jm.valeur_stock||0)+' de stock'
-  const j = jojoSolde
-  $('#bilan-jojo-solde').textContent = eur(Math.abs(j)); $('#bilan-jojo-solde').className = 'v '+(j>0?'neg':j<0?'pos':'')
-  $('#bilan-jojo-sense').textContent = (j>0?'Tu dois ça à Jojo':j<0?'Jojo te doit ça':'À jour')+' · touche pour le détail →'
+
+  const { data:hist } = await supabase.from('historique_resultat').select('date_jour,resultat_net_max').order('date_jour',{ascending:true})
+  chartData = hist||[]
+  drawChart()
 }
-$('#bilan-jojo-card').addEventListener('click', ()=>switchTab('jojo'))
+let chartData = []
+function fmtDateLong(iso){
+  try{ return new Date(iso+'T00:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'}) }catch(e){ return iso }
+}
+// Graphique « résultat net dans le temps », inspiré de Value8 (capture envoyée par
+// Max) : aire colorée + ligne, et on fait glisser le doigt dessus pour lire la
+// valeur exacte à n'importe quel jour (réticule + valeur + date qui suivent le doigt).
+function drawChart(){
+  const empty = chartData.length < 2
+  show($('#chart-empty'), empty)
+  const cv = $('#chart-canvas'); show(cv, !empty)
+  if(empty){ showChartPoint(chartData.length-1); return }
+  const ctx = cv.getContext('2d')
+  const dpr = window.devicePixelRatio||1
+  const rect = cv.getBoundingClientRect()
+  const W = Math.max(rect.width,280), H=140
+  cv.width=W*dpr; cv.height=H*dpr; cv.style.height=H+'px'
+  ctx.setTransform(dpr,0,0,dpr,0,0)
+
+  const vals = chartData.map(p=>Number(p.resultat_net_max||0))
+  let min=Math.min(...vals), max=Math.max(...vals)
+  if(min===max){ min-=1; max+=1 }
+  const padv=(max-min)*0.12; min-=padv; max+=padv
+  const xs = i => chartData.length===1 ? W/2 : (i/(chartData.length-1))*(W-8)+4
+  const ys = v => H-6-((v-min)/(max-min))*(H-16)
+  const positive = vals[vals.length-1] >= 0
+  const lineColor = positive ? '#3ad19a' : '#ff6b6b'
+  const fillColor = positive ? 'rgba(58,209,154,.22)' : 'rgba(255,107,107,.18)'
+
+  function base(){
+    ctx.clearRect(0,0,W,H)
+    ctx.beginPath()
+    chartData.forEach((p,i)=>{ const px=xs(i),py=ys(vals[i]); i===0?ctx.moveTo(px,py):ctx.lineTo(px,py) })
+    ctx.lineTo(xs(chartData.length-1),H); ctx.lineTo(xs(0),H); ctx.closePath()
+    ctx.fillStyle=fillColor; ctx.fill()
+    ctx.beginPath()
+    chartData.forEach((p,i)=>{ const px=xs(i),py=ys(vals[i]); i===0?ctx.moveTo(px,py):ctx.lineTo(px,py) })
+    ctx.strokeStyle=lineColor; ctx.lineWidth=2; ctx.stroke()
+  }
+  function idxFromX(clientX){
+    const r=cv.getBoundingClientRect(); const px=clientX-r.left
+    let idx=0,best=Infinity
+    chartData.forEach((p,i)=>{ const d=Math.abs(xs(i)-px); if(d<best){best=d; idx=i} })
+    return idx
+  }
+  function guide(idx){
+    base()
+    const px=xs(idx), py=ys(vals[idx])
+    ctx.beginPath(); ctx.moveTo(px,4); ctx.lineTo(px,H-4)
+    ctx.strokeStyle='rgba(255,255,255,.35)'; ctx.lineWidth=1; ctx.stroke()
+    ctx.beginPath(); ctx.arc(px,py,4,0,Math.PI*2); ctx.fillStyle=lineColor; ctx.fill()
+    showChartPoint(idx)
+  }
+  base(); showChartPoint(chartData.length-1)
+
+  let dragging=false
+  cv.onpointerdown = evt=>{ dragging=true; try{cv.setPointerCapture(evt.pointerId)}catch(e){}; guide(idxFromX(evt.clientX)) }
+  cv.onpointermove = evt=>{ if(!dragging) return; guide(idxFromX(evt.clientX)) }
+  cv.onpointerup = ()=>{ dragging=false; base(); showChartPoint(chartData.length-1) }
+  cv.onpointercancel = ()=>{ dragging=false; base(); showChartPoint(chartData.length-1) }
+}
+function showChartPoint(idx){
+  const p = chartData[idx]
+  if(!p){ $('#chart-value').textContent='—'; $('#chart-date').textContent='—'; return }
+  const n = Number(p.resultat_net_max||0)
+  $('#chart-value').textContent = eur(n); $('#chart-value').className = 'v '+(n>=0?'pos':'neg')
+  $('#chart-date').textContent = fmtDateLong(p.date_jour)
+}
+$('#bilan-max-card').addEventListener('click', ()=>openAccountDetail('max','Toi — tous tes achats et ventes'))
+$('#bilan-jm-card').addEventListener('click', ()=>openAccountDetail('jm','JM — tous les achats et ventes communs'))
+
+// Détail d'un compte (Max ou JM) : tous ses achats + toutes ses ventes, montants inclus.
+async function openAccountDetail(prop, title){
+  $('#ad-title').textContent = title
+  show($('#account-detail-sheet'), true)
+  const [{data:achats}, {data:ventes}] = await Promise.all([
+    supabase.from('achats').select('*').eq('proprietaire', prop).order('date_achat',{ascending:false}),
+    supabase.from('v_ventes_detail').select('*').eq('proprietaire', prop).order('date_vente',{ascending:false})
+  ])
+  const ab=$('#ad-achats'); ab.innerHTML=''; show($('#ad-achats-empty'), !(achats&&achats.length))
+  ;(achats||[]).forEach(a=>{
+    const el=document.createElement('div'); el.className='row'
+    el.innerHTML='<div class="l"><b>'+(a.date_achat||'')+'</b><small>'+(a.nature==='lot'?'Lot':'Article seul')+' · '+(a.plateforme||'')+'</small></div>'
+      +'<div class="r">'+eur(a.montant_paye)+'</div>'
+    ab.appendChild(el)
+  })
+  const vb=$('#ad-ventes'); vb.innerHTML=''; show($('#ad-ventes-empty'), !(ventes&&ventes.length))
+  ;(ventes||[]).forEach(v=>{
+    const m=Number(v.marge_reelle||0); const el=document.createElement('div'); el.className='row'
+    el.innerHTML='<div class="l"><b>'+esc(v.nom||v.ref)+'</b><small>'+(v.date_vente||'')+'</small></div>'
+      +'<div class="r">'+eur(v.montant_encaisse)+'<small style="font-weight:600;color:'+(m>=0?'var(--good)':'var(--bad)')+'">marge '+eur(m)+'</small></div>'
+    vb.appendChild(el)
+  })
+}
+$('#account-detail-close').addEventListener('click', ()=>show($('#account-detail-sheet'), false))
+$('#account-detail-sheet').addEventListener('click', e=>{ if(e.target.id==='account-detail-sheet') show($('#account-detail-sheet'), false) })
+
+// Jojo : la position (déjà en haut), les mouvements de l'ardoise, SES achats perso
+// (proprietaire = jojo, hors stock/résultat de Max — §7), et un accès direct aux
+// opérations JM dans lesquelles il est impliqué à 50% — vue complète, rien d'éclaté.
 async function loadJojo(){
   const { data } = await supabase.from('compte_courant_jojo').select('*').order('date_mouvement',{ascending:false}).order('id',{ascending:false})
   const rows=data||[]; const box=$('#jojo-moves'); box.innerHTML=''; show($('#jojo-empty'), rows.length===0)
@@ -711,7 +910,16 @@ async function loadJojo(){
       +'<div class="r" style="color:'+(v>0?'var(--good)':'var(--bad)')+'">'+(v>0?'+':'')+eur(v)+'</div>'
     box.appendChild(el)
   })
+  const { data:achats } = await supabase.from('achats').select('*').eq('proprietaire','jojo').order('date_achat',{ascending:false})
+  const ja = achats||[]; const jbox=$('#jojo-achats'); jbox.innerHTML=''; show($('#jojo-achats-empty'), ja.length===0)
+  ja.forEach(a=>{
+    const el=document.createElement('div'); el.className='row'
+    el.innerHTML='<div class="l"><b>'+(a.date_achat||'')+'</b><small>'+(a.nature==='lot'?'Lot':'Article seul')+' · '+(a.plateforme||'')+'</small></div>'
+      +'<div class="r">'+eur(a.montant_paye)+'</div>'
+    jbox.appendChild(el)
+  })
 }
+$('#btn-jojo-jm').addEventListener('click', ()=>openAccountDetail('jm','JM — opérations où Jojo est à 50%'))
 
 // feuille compte — seul endroit où Face ID peut être activé (bug corrigé)
 $('#btn-account').addEventListener('click', ()=>show($('#account-sheet'), true))

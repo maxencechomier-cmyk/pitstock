@@ -165,8 +165,19 @@
   .sheetcard .foot{margin:2px 0 0}
 
   /* ---------- Écran d'ajout (saisie : sobre, contraste maxi) ---------- */
-  #add{flex:1;display:flex;flex-direction:column;gap:16px;padding-bottom:20px}
-  .addbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:2px}
+  /* #add est sorti du flux de .wrap (bug round scroll, 08/09) : avant, sans hauteur ni
+     overflow propres, tout ce qui dépassait la hauteur d'écran (un gros lot) devenait
+     inaccessible car body{overflow:hidden} coupe net. Même schéma que #app : conteneur
+     plein écran fixe, contenu défilant à l'intérieur. */
+  #add{position:fixed;top:0;left:0;right:0;height:100vh;height:100dvh;display:flex;flex-direction:column;background:var(--bg);z-index:12}
+  .addbar{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:max(14px,env(safe-area-inset-top)) 16px 10px;flex:none}
+  /* Un seul de ces trois panneaux est visible à la fois (l'étape en cours) : chacun
+     défile pour son propre compte, largeur alignée sur .content de l'écran principal. */
+  #add-cars,#add-achat-total,#add-vente-total{flex:1;min-height:0;overflow-y:auto;
+    -webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;
+    width:100%;max-width:520px;margin:0 auto;box-sizing:border-box;
+    padding:0 16px calc(24px + env(safe-area-inset-bottom) * .55)}
   .addbar b{font-size:17px}
   .q{font-size:16px;font-weight:600;color:var(--ink);margin:2px 0}
   .seg{display:flex;flex-wrap:wrap;gap:8px}
@@ -251,11 +262,11 @@
   <section id="app" class="hidden">
     <header class="statusbar">
       <div class="sbstats">
-        <div class="sbstat"><span>Résultat net</span><b id="sb-res">—</b></div>
+        <div class="sbstat"><span>Trésorerie</span><b id="sb-tresorerie">—</b></div>
         <div class="sbsep"></div>
         <div class="sbstat"><span>Stock</span><b id="sb-stock">—</b></div>
         <div class="sbsep"></div>
-        <div class="sbstat"><span>Jojo</span><b id="sb-jojo">—</b></div>
+        <div class="sbstat"><span>Bénéfice</span><b id="sb-benefice">—</b></div>
       </div>
       <button class="gear" id="btn-account" aria-label="Compte">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-2.7-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.1-2.7l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 2.7-1.1V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></svg>
@@ -267,9 +278,9 @@
       <div class="panel" id="tab-accueil">
         <div class="hello">Bonjour <b id="whoami2">👋</b></div>
         <div class="hero">
-          <div class="k">Résultat net (avec stock)</div>
+          <div class="k">Trésorerie totale</div>
           <div class="v" id="kpi-gain-stock">—</div>
-          <div class="sub" id="kpi-gain-hors">Hors stock : —</div>
+          <div class="sub" id="kpi-gain-hors">Stock : — · Bénéfice : —</div>
         </div>
 
         <!-- Les 2 boutons d'entrée : le geste rapide, tout de suite visible (§13 principe 2) -->
@@ -279,8 +290,8 @@
         </div>
 
         <div class="grid">
-          <div class="card"><div class="k">En stock — Max</div><div class="v" id="kpi-stock-max">—</div></div>
-          <div class="card"><div class="k">En stock — JM</div><div class="v" id="kpi-stock-jm">—</div></div>
+          <div class="card"><div class="k">Voitures — Max</div><div class="v" id="kpi-stock-max">—</div></div>
+          <div class="card"><div class="k">Voitures — JM</div><div class="v" id="kpi-stock-jm">—</div></div>
         </div>
       </div>
 
@@ -302,13 +313,24 @@
       <div class="panel hidden" id="tab-bilan">
         <div class="paneltitle">Bilan</div>
 
-        <div class="card" style="border-color:rgba(255,176,31,.35)">
+        <!-- §7 — Flux d'argent : baisse à l'achat, monte à la vente. Nom volontairement
+             différent de "Trésorerie totale" plus bas : ce n'est pas le même chiffre
+             (celui-ci compte le stock ajouté, cette courbe non) — les confondre
+             referait exactement la confusion que Max a signalée le 08/09. -->
+        <div class="hero" style="padding-bottom:10px">
+          <div class="k">Flux d'argent</div>
+          <div class="sub" style="margin:2px 0 10px">Achat = ça baisse · Vente = ça monte · <span style="color:var(--accent)">● Toi</span> <span style="color:#4f8dff">● JM</span></div>
+          <svg id="cashflow-chart" viewBox="0 0 300 110" preserveAspectRatio="none" style="width:100%;height:130px;display:block"></svg>
+          <div class="note hidden" id="cashflow-empty">Pas encore assez de mouvements pour tracer une courbe.</div>
+        </div>
+
+        <div class="card" id="bilan-max-card" style="border-color:rgba(255,176,31,.35);cursor:pointer">
           <div class="k"><span class="propchip p-max"><i></i>Toi</span> — ta caisse, à toi seul</div>
           <div class="v" id="bilan-max-net">—</div>
           <div class="sub" id="bilan-max-detail">—</div>
         </div>
 
-        <div class="card" style="border-color:rgba(79,141,255,.35)">
+        <div class="card" id="bilan-jm-card" style="border-color:rgba(79,141,255,.35);cursor:pointer">
           <div class="k"><span class="propchip p-jm"><i></i>JM</span> — commune avec Jojo, résultat partagé 50-50</div>
           <div class="v" id="bilan-jm-total">—</div>
           <div class="sub" id="bilan-jm-detail">—</div>
@@ -321,10 +343,15 @@
         </div>
 
         <div class="hero" style="text-align:center;margin-top:2px">
-          <div class="k">Résultat net Max (avec stock)</div>
-          <div class="v" id="kpi-net">—</div>
-          <div class="sub">Ta caisse + la moitié du résultat JM — c'est le seul des trois chiffres ci-dessus qui dit ce qui est vraiment à toi.</div>
+          <div class="k">Trésorerie totale</div>
+          <div class="v" id="kpi-tresorerie">—</div>
+          <div class="sub">Stock au prix plancher + ventes déjà encaissées — net à toi (ta caisse entière + la moitié de JM).</div>
         </div>
+        <div class="grid">
+          <div class="card"><div class="k">Stock</div><div class="v small" id="kpi-stock-valeur">—</div></div>
+          <div class="card"><div class="k">Bénéfice</div><div class="v small" id="kpi-benefice">—</div></div>
+        </div>
+        <p class="note">Bénéfice = marge réelle (encaissé − coût d'achat des voitures vendues), jamais le chiffre d'affaires brut.</p>
       </div>
 
       <!-- JOJO -->
@@ -337,7 +364,15 @@
         </div>
         <div id="jojo-moves" class="list"></div>
         <div id="jojo-empty" class="empty hidden">Aucun mouvement. L'ardoise est vierge.</div>
-        <button class="btn secondary" id="btn-regler">Régler Jojo — bientôt</button>
+        <button class="btn secondary" id="btn-regler">Régler Jojo</button>
+
+        <div style="font-size:13px;font-weight:750;color:var(--muted);margin:16px 0 0">Ses voitures à lui</div>
+        <div id="jojo-cars" class="list"></div>
+        <div id="jojo-cars-empty" class="note hidden">Aucune voiture à son nom pour l'instant.</div>
+
+        <div style="font-size:13px;font-weight:750;color:var(--muted);margin:16px 0 0">Achats et ventes JM récents</div>
+        <div id="jojo-jm" class="list"></div>
+        <div id="jojo-jm-empty" class="note hidden">Rien à afficher côté caisse JM.</div>
       </div>
     </main>
 
@@ -362,6 +397,7 @@
           <div class="card"><div class="k">Prix plancher</div><div class="v small" id="sd-plancher">—</div></div>
         </div>
         <div id="sd-note" class="note hidden"></div>
+        <button class="btn secondary" id="sd-copy">Copier le titre</button>
         <button class="linkish center" id="stock-sheet-close">Fermer</button>
       </div>
     </div>
@@ -374,6 +410,56 @@
         <button class="btn secondary" id="btn-logout">Déconnexion</button>
         <div class="foot" id="foot">Stock Hub — base <span id="foot-ref"></span></div>
         <button class="linkish center" id="account-close">Fermer</button>
+      </div>
+    </div>
+
+    <!-- Feuille « vente » — lecture seule (§8), même esprit que la fiche Stock -->
+    <div id="vente-sheet" class="sheet hidden">
+      <div class="sheetcard">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+          <div><b id="vd-nom" style="font-size:19px;display:block">—</b><small id="vd-meta" style="color:var(--muted)">—</small></div>
+        </div>
+        <div class="grid">
+          <div class="card"><div class="k">Date</div><div class="v small" id="vd-date">—</div></div>
+          <div class="card"><div class="k">Encaissé</div><div class="v small" id="vd-encaisse">—</div></div>
+          <div class="card"><div class="k">Coût de sortie</div><div class="v small" id="vd-cout">—</div></div>
+          <div class="card"><div class="k">Marge réelle</div><div class="v small" id="vd-marge">—</div></div>
+        </div>
+        <p class="note" id="vd-rotation-note">—</p>
+        <button class="btn secondary" id="vd-copy">Copier le titre</button>
+        <button class="linkish center" id="vente-sheet-close">Fermer</button>
+      </div>
+    </div>
+
+    <!-- Feuille « détail d'un compte » — Achats puis Ventes, deux sections séparées (§6) -->
+    <div id="detail-sheet" class="sheet hidden">
+      <div class="sheetcard">
+        <div><b id="dt-title" style="font-size:19px;display:block">—</b><small id="dt-sub" style="color:var(--muted)">—</small></div>
+        <div style="font-size:13px;font-weight:750;color:var(--muted);margin:8px 0 0">Achats</div>
+        <div id="dt-achats" class="list"></div>
+        <div id="dt-achats-empty" class="note hidden">Aucun achat pour l'instant.</div>
+        <div style="font-size:13px;font-weight:750;color:var(--muted);margin:10px 0 0">Ventes</div>
+        <div id="dt-ventes" class="list"></div>
+        <div id="dt-ventes-empty" class="note hidden">Aucune vente pour l'instant.</div>
+        <button class="linkish center" id="detail-sheet-close">Fermer</button>
+      </div>
+    </div>
+
+    <!-- Feuille « Régler Jojo » — prêt personnel / règlement (§9) -->
+    <div id="regler-sheet" class="sheet hidden">
+      <div class="sheetcard">
+        <div><b style="font-size:19px;display:block">Régler Jojo</b><small style="color:var(--muted)">Un mouvement hors achat/vente — se saisit à la main.</small></div>
+        <div class="field"><label>De quoi s'agit-il ?</label>
+          <div class="seg" id="rg-type">
+            <button class="segbtn" data-v="reglement">Tu lui verses de l'argent</button>
+            <button class="segbtn" data-v="pret_personnel">Tu lui prêtes, hors activité</button>
+          </div>
+        </div>
+        <div class="field"><label>Montant (€)</label><input id="rg-montant" type="number" inputmode="decimal" step="0.01" min="0" placeholder="ex. 20.00" /></div>
+        <div class="field"><label>Note (optionnel)</label><input id="rg-note" type="text" placeholder="ex. remboursement cash à la main" /></div>
+        <div id="rg-msg" class="msg hidden"></div>
+        <button class="btn" id="rg-save">Enregistrer</button>
+        <button class="linkish center" id="regler-sheet-close">Annuler</button>
       </div>
     </div>
   </section>
@@ -593,6 +679,32 @@ async function enterApp(session){
   if(!TABS.includes(lastTab)) lastTab='accueil'
   switchTab(lastTab)
   await refreshAll()
+  restoreDraft()
+}
+
+// Reprend un achat/vente resté en plein milieu (fermeture, mise en veille, crash) —
+// appelé après refreshAll() pour que le stock (recherche vente) soit déjà chargé.
+function restoreDraft(){
+  const d = loadDraft()
+  if(!d) return
+  const list = d.mode==='achat' ? (d.cars||[]) : (d.saleCars||[])
+  if(list.length===0) return
+  mode = d.mode==='vente' ? 'vente' : 'achat'
+  addStep = d.addStep==='total' ? 'total' : 'cars'
+  cars = d.cars||[]; saleCars = d.saleCars||[]
+  aProp = d.aProp||'max'; aPayer = d.aPayer||'max'
+  $('#add-title').textContent = mode==='achat' ? 'Achat' : 'Vente'
+  show($('#c-achat-only'), mode==='achat')
+  segPick($('#a-prop'), aProp); renderPayerUI()
+  resetCarForm(); renderCarsList()
+  const stepShown = addStep==='total' ? (mode==='achat' ? 'add-achat-total' : 'add-vente-total') : 'add-cars'
+  ;['add-cars','add-achat-total','add-vente-total'].forEach(s=>show($('#'+s), s===stepShown))
+  if(addStep==='total'){
+    if(mode==='achat'){ $('#a-total').value = d.aTotal||''; buildAchatRecap() }
+    else { $('#v-total').value = d.vTotal||''; buildVenteRecap() }
+  }
+  view('add')
+  flash('Reprise de ton '+(mode==='achat'?'achat':'vente')+' en cours')
 }
 
 function switchTab(name){
@@ -621,23 +733,26 @@ async function loadDashboard(){
   if(error) return
   const d = data || {}
   const signed = (el,val,small)=>{ const n=Number(val||0); el.textContent=eur(n); el.className='v '+(small?'small ':'')+(n>0?'pos':n<0?'neg':'') }
-  // "Résultat" affiché à l'accueil et dans la barre du haut = le résultat NET de Max
-  // (sa caisse + 50% de la caisse JM, §12) — jamais le cumul brut Max+JM, qui donnerait
-  // à Max l'illusion de posséder 100% du résultat JM. C'est la même valeur que "Résultat
-  // net Max" dans Bilan : un seul chiffre, affiché à trois endroits, jamais deux chiffres
-  // différents pour la même question (source de la confusion remontée par Max).
-  signed($('#kpi-gain-stock'), d.resultat_net_max)
-  $('#kpi-gain-hors').textContent = 'Hors stock : '+eur(d.resultat_net_max_hors_stock)
+  // Trois chiffres, un seul calcul chacun (v_tableau_de_bord), affichés à l'identique
+  // à trois endroits (barre du haut, accueil, Bilan) — plus jamais deux calculs
+  // différents pour la même question (bug remonté par Max le 08/09).
+  const tresorerie = Number(d.tresorerie_totale||0)
+  const stockVal   = Number(d.stock_net_max||0)
+  const benefice   = Number(d.benefice_max||0)
+  signed($('#kpi-gain-stock'), tresorerie)
+  $('#kpi-gain-hors').textContent = 'Stock : '+eur(stockVal)+' · Bénéfice : '+eur(benefice)
   $('#kpi-stock-max').textContent = (d.stock_max??0)+' voiture'+((d.stock_max||0)>1?'s':'')
   $('#kpi-stock-jm').textContent  = (d.stock_jm??0)+' voiture'+((d.stock_jm||0)>1?'s':'')
-  signed($('#kpi-net'), d.resultat_net_max)
+  signed($('#kpi-tresorerie'), tresorerie)
+  signed($('#kpi-stock-valeur'), stockVal, true)
+  signed($('#kpi-benefice'), benefice, true)
   const j = Number(d.solde_jojo||0)
   jojoSolde = j
   $('#kpi-jojo').textContent = eur(Math.abs(j)); $('#kpi-jojo').className = 'v '+(j>0?'neg':j<0?'pos':'')
   $('#jojo-sense').textContent = j>0 ? 'Tu dois ça à Jojo' : j<0 ? 'Jojo te doit ça' : 'À jour'
-  $('#sb-res').textContent = eur(d.resultat_net_max)
-  $('#sb-stock').textContent = eur(d.valeur_stock)
-  $('#sb-jojo').textContent = (j===0?'à jour':(j>0?'+':'')+eur(j))
+  $('#sb-tresorerie').textContent = eur(tresorerie)
+  $('#sb-stock').textContent = eur(stockVal)
+  $('#sb-benefice').textContent = eur(benefice)
 }
 
 let stockCache = []
@@ -663,7 +778,9 @@ async function loadStock(){
     })
   })
 }
+let sdCurrent = null
 function openStockDetail(a){
+  sdCurrent = a
   $('#sd-nom').textContent = a.nom || a.ref
   $('#sd-meta').innerHTML = 'Set '+esc(a.numero_set_lego||a.ref)+' · Réf. '+esc(a.ref)+' · '+ETAT_LABEL[a.etat]+(a.minifig?' · minifig':'')+' · '+propChip(a.proprietaire)
   $('#sd-achat').textContent = eur(a.cout_achat)
@@ -673,18 +790,40 @@ function openStockDetail(a){
   show($('#sd-note'), false)
   show($('#stock-sheet'), true)
 }
+async function copyText(t){
+  try{ await navigator.clipboard.writeText(t); flash('📋 Copié') }
+  catch(e){ flash('Impossible de copier ici') }
+}
+$('#sd-copy').addEventListener('click', ()=>{ if(!sdCurrent) return; copyText((sdCurrent.nom||sdCurrent.ref)+' — '+ETAT_LABEL[sdCurrent.etat]+(sdCurrent.minifig?' · minifig':'')) })
 $('#stock-sheet-close').addEventListener('click', ()=>show($('#stock-sheet'), false))
 $('#stock-sheet').addEventListener('click', e=>{ if(e.target.id==='stock-sheet') show($('#stock-sheet'), false) })
 async function loadVentes(){
   const { data } = await supabase.from('v_ventes_detail').select('*').order('date_vente',{ascending:false})
   const rows=data||[]; const box=$('#ventes-list'); box.innerHTML=''; show($('#ventes-empty'), rows.length===0)
   rows.forEach(v=>{
-    const m=Number(v.marge_reelle||0); const el=document.createElement('div'); el.className='row'
-    el.innerHTML='<div class="l"><b>'+esc(v.nom||v.ref)+'</b><small>'+(v.date_vente||'')+' · '+propChip(v.proprietaire)+'</small></div>'
-      +'<div class="r">'+eur(v.montant_encaisse)+'<small style="font-weight:600;color:'+(m>=0?'var(--good)':'var(--bad)')+'">marge '+eur(m)+'</small></div>'
+    const el=document.createElement('div'); el.className='row'; el.style.cursor='pointer'
+    el.innerHTML='<div class="l"><b>'+esc(v.nom||v.ref)+'</b><small>Set '+esc(v.numero_set_lego||v.ref)+' · '+ETAT_LABEL[v.etat]+' · '+propChip(v.proprietaire)+'</small></div>'
+      +'<div class="r">'+eur(v.montant_encaisse)+'</div>'
+    el.addEventListener('click', ()=>openVenteDetail(v))
     box.appendChild(el)
   })
 }
+let vdCurrent = null
+function openVenteDetail(v){
+  vdCurrent = v
+  $('#vd-nom').textContent = v.nom || v.ref
+  $('#vd-meta').innerHTML = 'Set '+esc(v.numero_set_lego||v.ref)+' · Réf. '+esc(v.ref)+' · '+ETAT_LABEL[v.etat]+(v.minifig?' · minifig':'')+' · '+propChip(v.proprietaire)
+  $('#vd-date').textContent = v.date_vente||'—'
+  $('#vd-encaisse').textContent = eur(v.montant_encaisse)
+  $('#vd-cout').textContent = eur(v.cout_sortie)
+  const m = Number(v.marge_reelle||0)
+  $('#vd-marge').textContent = eur(m); $('#vd-marge').className = 'v small '+(m>0?'pos':m<0?'neg':'')
+  $('#vd-rotation-note').textContent = 'Resté '+(v.rotation_jours??'—')+(v.rotation_jours!=null?' j':'')+' en stock avant de partir.'
+  show($('#vente-sheet'), true)
+}
+$('#vente-sheet-close').addEventListener('click', ()=>show($('#vente-sheet'), false))
+$('#vente-sheet').addEventListener('click', e=>{ if(e.target.id==='vente-sheet') show($('#vente-sheet'), false) })
+$('#vd-copy').addEventListener('click', ()=>{ if(!vdCurrent) return; copyText((vdCurrent.nom||vdCurrent.ref)+' — '+ETAT_LABEL[vdCurrent.etat]+(vdCurrent.minifig?' · minifig':'')) })
 // Bilan : les 3 poches, jamais mélangées — chacune répond à sa propre question
 // (ce qui est à toi / ce qui est commun / ce que vous vous devez).
 async function loadBilan(){
@@ -694,14 +833,84 @@ async function loadBilan(){
   const jm  = rows.find(r=>r.proprietaire==='jm')  || {}
   const signed=(id,val)=>{ const el=$('#'+id); const n=Number(val||0); el.textContent=eur(n); el.className='v '+(n>0?'pos':n<0?'neg':'') }
   signed('bilan-max-net', max.gain_avec_stock)
-  $('#bilan-max-detail').textContent = eur(max.valeur_stock||0)+' de stock en attente de vente'
+  $('#bilan-max-detail').textContent = eur(max.valeur_stock||0)+' de stock en attente de vente · touche pour le détail →'
   signed('bilan-jm-total', jm.gain_avec_stock)
-  $('#bilan-jm-detail').textContent = 'Ta part : '+eur((Number(jm.gain_avec_stock||0))/2)+' · '+eur(jm.valeur_stock||0)+' de stock'
+  $('#bilan-jm-detail').textContent = 'Ta part : '+eur((Number(jm.gain_avec_stock||0))/2)+' · '+eur(jm.valeur_stock||0)+' de stock · touche pour le détail →'
   const j = jojoSolde
   $('#bilan-jojo-solde').textContent = eur(Math.abs(j)); $('#bilan-jojo-solde').className = 'v '+(j>0?'neg':j<0?'pos':'')
   $('#bilan-jojo-sense').textContent = (j>0?'Tu dois ça à Jojo':j<0?'Jojo te doit ça':'À jour')+' · touche pour le détail →'
+  loadCashflow()
 }
 $('#bilan-jojo-card').addEventListener('click', ()=>switchTab('jojo'))
+$('#bilan-max-card').addEventListener('click', ()=>openAccountDetail('max'))
+$('#bilan-jm-card').addEventListener('click', ()=>openAccountDetail('jm'))
+
+// §6 — détail Achats / Ventes d'un compte, deux sections séparées.
+async function openAccountDetail(prop){
+  $('#dt-title').textContent = prop==='max' ? 'Ta caisse' : 'Caisse JM'
+  $('#dt-sub').textContent = prop==='max' ? 'Tes achats et tes ventes, à toi seul.' : 'Les achats et ventes de la caisse commune avec Jojo.'
+  show($('#detail-sheet'), true)
+  const [{data:achats}, {data:ventes}] = await Promise.all([
+    supabase.from('achats').select('*').eq('proprietaire',prop).order('date_achat',{ascending:false}),
+    supabase.from('v_ventes_detail').select('*').eq('proprietaire',prop).order('date_vente',{ascending:false})
+  ])
+  const ab=$('#dt-achats'); ab.innerHTML=''
+  const arows = achats||[]; show($('#dt-achats-empty'), arows.length===0)
+  arows.forEach(a=>{
+    const el=document.createElement('div'); el.className='row'
+    el.innerHTML='<div class="l"><b>'+(a.nature==='lot'?'Lot':'Achat')+'</b><small>'+(a.date_achat||'')+' · '+(a.plateforme||'')+'</small></div>'
+      +'<div class="r">'+eur(a.montant_paye)+'</div>'
+    ab.appendChild(el)
+  })
+  const vb=$('#dt-ventes'); vb.innerHTML=''
+  const vrows = ventes||[]; show($('#dt-ventes-empty'), vrows.length===0)
+  vrows.forEach(v=>{
+    const el=document.createElement('div'); el.className='row'
+    el.innerHTML='<div class="l"><b>'+esc(v.nom||v.ref)+'</b><small>'+(v.date_vente||'')+' · '+ETAT_LABEL[v.etat]+'</small></div>'
+      +'<div class="r">'+eur(v.montant_encaisse)+'</div>'
+    vb.appendChild(el)
+  })
+}
+$('#detail-sheet-close').addEventListener('click', ()=>show($('#detail-sheet'), false))
+$('#detail-sheet').addEventListener('click', e=>{ if(e.target.id==='detail-sheet') show($('#detail-sheet'), false) })
+
+// §7 — courbe "Flux d'argent" : achat = -montant, vente = +montant, cumulé dans le
+// temps, une ligne par poche (Toi / JM). Dessinée en SVG pur (pas de dépendance).
+async function loadCashflow(){
+  const [{data:achatsMax},{data:achatsJm},{data:ventesMax},{data:ventesJm}] = await Promise.all([
+    supabase.from('achats').select('montant_paye,date_achat').eq('proprietaire','max'),
+    supabase.from('achats').select('montant_paye,date_achat').eq('proprietaire','jm'),
+    supabase.from('v_ventes_detail').select('montant_encaisse,date_vente').eq('proprietaire','max'),
+    supabase.from('v_ventes_detail').select('montant_encaisse,date_vente').eq('proprietaire','jm')
+  ])
+  const points = (achats, ventes) => {
+    const evts = []
+    ;(achats||[]).forEach(a=>evts.push({date:a.date_achat, delta:-Number(a.montant_paye||0)}))
+    ;(ventes||[]).forEach(v=>evts.push({date:v.date_vente, delta:Number(v.montant_encaisse||0)}))
+    evts.sort((a,b)=> (a.date||'') < (b.date||'') ? -1 : 1)
+    let acc = 0; const series = [{x:0,y:0}]
+    evts.forEach((e,i)=>{ acc += e.delta; series.push({x:i+1, y:acc}) })
+    return series
+  }
+  const sMax = points(achatsMax, ventesMax), sJm = points(achatsJm, ventesJm)
+  const svg = $('#cashflow-chart')
+  const totalEvts = Math.max(sMax.length, sJm.length)
+  if(totalEvts<3){ svg.innerHTML=''; show($('#cashflow-empty'), true); return }
+  show($('#cashflow-empty'), false)
+  const W=300, H=110, PAD=8
+  const allY = sMax.concat(sJm).map(p=>p.y)
+  const minY = Math.min(0,...allY), maxY = Math.max(0,...allY)
+  const spanY = (maxY-minY)||1
+  const xOf = (s,i) => PAD + (W-2*PAD) * (s.length<=1?0:i/(s.length-1))
+  const yOf = v => H-PAD - (H-2*PAD) * ((v-minY)/spanY)
+  const path = s => s.map((p,i)=>(xOf(s,i)).toFixed(1)+','+yOf(p.y).toFixed(1)).join(' ')
+  const zeroY = yOf(0).toFixed(1)
+  svg.innerHTML =
+    '<line x1="'+PAD+'" y1="'+zeroY+'" x2="'+(W-PAD)+'" y2="'+zeroY+'" stroke="var(--line)" stroke-width="1"/>'
+    +'<polyline points="'+path(sJm)+'" fill="none" stroke="#4f8dff" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" opacity="0.85"/>'
+    +'<polyline points="'+path(sMax)+'" fill="none" stroke="var(--accent)" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>'
+}
+
 async function loadJojo(){
   const { data } = await supabase.from('compte_courant_jojo').select('*').order('date_mouvement',{ascending:false}).order('id',{ascending:false})
   const rows=data||[]; const box=$('#jojo-moves'); box.innerHTML=''; show($('#jojo-empty'), rows.length===0)
@@ -711,12 +920,67 @@ async function loadJojo(){
       +'<div class="r" style="color:'+(v>0?'var(--good)':'var(--bad)')+'">'+(v>0?'+':'')+eur(v)+'</div>'
     box.appendChild(el)
   })
+
+  // Ses voitures à lui — hors stock/résultat de Max, mais visibles ici (§9, §7 instructions).
+  const { data: carsJojo } = await supabase.from('v_stock_jojo').select('*').order('date_entree',{ascending:false})
+  const cb=$('#jojo-cars'); cb.innerHTML=''
+  const crows = carsJojo||[]; show($('#jojo-cars-empty'), crows.length===0)
+  const STATUT_LABEL = { en_stock:'En stock', en_ligne:'En ligne', vendu:'Vendue' }
+  crows.forEach(a=>{
+    const el=document.createElement('div'); el.className='row'
+    el.innerHTML='<div class="l"><b>'+esc(a.nom||a.ref)+'</b><small>Set '+esc(a.numero_set_lego||a.ref)+' · '+ETAT_LABEL[a.etat]+' · '+(STATUT_LABEL[a.statut]||a.statut)+'</small></div>'
+      +'<div class="r">'+eur(a.cout_achat)+'</div>'
+    cb.appendChild(el)
+  })
+
+  // Achats et ventes JM récents — toute la caisse JM le concerne, elle est commune (§9).
+  const [{data:achatsJm}, {data:ventesJm}] = await Promise.all([
+    supabase.from('achats').select('*').eq('proprietaire','jm').order('date_achat',{ascending:false}).limit(10),
+    supabase.from('v_ventes_detail').select('*').eq('proprietaire','jm').order('date_vente',{ascending:false}).limit(10)
+  ])
+  const jmEvts = []
+  ;(achatsJm||[]).forEach(a=>jmEvts.push({date:a.date_achat, label:(a.nature==='lot'?'Lot':'Achat'), montant:-Number(a.montant_paye||0)}))
+  ;(ventesJm||[]).forEach(v=>jmEvts.push({date:v.date_vente, label:esc(v.nom||v.ref), montant:Number(v.montant_encaisse||0)}))
+  jmEvts.sort((a,b)=> (b.date||'') < (a.date||'') ? -1 : 1)
+  const jb=$('#jojo-jm'); jb.innerHTML=''; show($('#jojo-jm-empty'), jmEvts.length===0)
+  jmEvts.slice(0,10).forEach(e=>{
+    const el=document.createElement('div'); el.className='row'
+    el.innerHTML='<div class="l"><b>'+e.label+'</b><small>'+(e.date||'')+'</small></div>'
+      +'<div class="r" style="color:'+(e.montant>=0?'var(--good)':'var(--bad)')+'">'+(e.montant>=0?'+':'')+eur(e.montant)+'</div>'
+    jb.appendChild(el)
+  })
 }
 
 // feuille compte — seul endroit où Face ID peut être activé (bug corrigé)
 $('#btn-account').addEventListener('click', ()=>show($('#account-sheet'), true))
 $('#account-close').addEventListener('click', ()=>show($('#account-sheet'), false))
 $('#account-sheet').addEventListener('click', e=>{ if(e.target.id==='account-sheet') show($('#account-sheet'), false) })
+
+// §9 — Régler Jojo : prêt personnel ou règlement, saisis à la main (les deux sont
+// des mouvements "−", §8 des instructions : Max fait sortir de l'argent vers Jojo).
+let rgType = 'reglement'
+wireSeg('#rg-type', v=>{ rgType=v })
+segPick($('#rg-type'), 'reglement')
+$('#btn-regler').addEventListener('click', ()=>{
+  $('#rg-montant').value=''; $('#rg-note').value=''; rgMsg(''); segPick($('#rg-type'),'reglement'); rgType='reglement'
+  show($('#regler-sheet'), true)
+})
+$('#regler-sheet-close').addEventListener('click', ()=>show($('#regler-sheet'), false))
+function rgMsg(t,k){ const m=$('#rg-msg'); if(!t){show(m,false);return} m.textContent=t; m.className='msg '+(k||''); show(m,true) }
+$('#rg-save').addEventListener('click', async ()=>{
+  const montant = parseFloat(($('#rg-montant').value||'').replace(',','.'))
+  if(!(montant>0)){ rgMsg('Indique un montant.','err'); return }
+  busy($('#rg-save'), true); rgMsg('')
+  const note = $('#rg-note').value.trim()
+  const { error } = await supabase.from('compte_courant_jojo').insert({
+    type_mouvement: rgType, montant: -Math.abs(montant), origine_type: 'manuel', commentaire: note
+  })
+  busy($('#rg-save'), false)
+  if(error){ rgMsg(error.message,'err'); return }
+  feedback('success'); flash('✅ Enregistré')
+  show($('#regler-sheet'), false)
+  await loadDashboard(); await loadJojo()
+})
 $('#btn-register2').addEventListener('click', async ()=>{
   const b=$('#btn-register2'); busy(b,true)
   try{ const { error } = await supabase.auth.registerPasskey(); if(error) throw error
@@ -727,6 +991,34 @@ $('#btn-register2').addEventListener('click', async ()=>{
 $('#btn-logout').addEventListener('click', async ()=>{ await supabase.auth.signOut(); show($('#account-sheet'), false) })
 
 function flash(text){ const f=$('#flash'); f.textContent=text; f.classList.add('on'); setTimeout(()=>f.classList.remove('on'), 1900) }
+
+// Feedback sonore léger (point 3, 08/09) : synthétisé à la volée (Web Audio), pas de
+// fichier à charger. navigator.vibrate() est un bonus qui ne fait rien sur Safari iOS
+// (API absente du navigateur, PWA comprise) — posé pour Android sans coût.
+let actx = null
+function ensureAudio(){
+  if(!actx){ try{ actx = new (window.AudioContext||window.webkitAudioContext)() }catch(e){ return null } }
+  if(actx.state==='suspended'){ actx.resume() }
+  return actx
+}
+function beep(freq, dur, gainPeak){
+  const ctx = ensureAudio(); if(!ctx) return
+  const osc = ctx.createOscillator(), gain = ctx.createGain()
+  osc.type='sine'; osc.frequency.value=freq
+  gain.gain.setValueAtTime(0, ctx.currentTime)
+  gain.gain.linearRampToValueAtTime(gainPeak, ctx.currentTime+0.008)
+  gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+dur)
+  osc.connect(gain); gain.connect(ctx.destination)
+  osc.start(); osc.stop(ctx.currentTime+dur+0.02)
+}
+function feedback(kind){
+  try{
+    if(kind==='add') beep(720,0.09,0.10)
+    else if(kind==='remove') beep(300,0.08,0.07)
+    else if(kind==='success'){ beep(660,0.09,0.12); setTimeout(()=>beep(990,0.14,0.12),90) }
+    if(navigator.vibrate) navigator.vibrate(kind==='success' ? [15,40,15] : 12)
+  }catch(e){}
+}
 function segPick(container, value){ [...container.querySelectorAll('.segbtn')].forEach(b=>b.classList.toggle('on', b.dataset.v===value)) }
 function wireSeg(sel, onPick){ const c=$(sel); c.addEventListener('click', e=>{ const b=e.target.closest('.segbtn'); if(!b) return; segPick(c, b.dataset.v); onPick(b.dataset.v) }) }
 
@@ -736,6 +1028,24 @@ let mode = 'achat'
 let addStep = 'cars'    // 'cars' (étape 1) ou 'total' (étape 2) — pour que Retour remonte d'un cran, pas jusqu'à l'accueil
 let cars = []           // achat : {ref,nom,etat,minifig,poids,poidsManuel}
 let saleCars = []        // vente : lignes choisies depuis le stock {id,nom,ref,etat,proprietaire,poids}
+
+// Brouillon d'achat/vente en cours (point 2, 08/09) : avant, fermer l'app en plein
+// ajout d'un gros lot faisait tout perdre — retour à l'accueil, lot à refaire de zéro.
+// On sauvegarde l'état à chaque étape ; enterApp() le reprend en priorité au démarrage.
+const DRAFT_KEY = 'add_draft_v1'
+function saveDraft(){
+  try{
+    const list = mode==='achat' ? cars : saleCars
+    if(list.length===0 && addStep==='cars'){ localStorage.removeItem(DRAFT_KEY); return }
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({
+      mode, addStep, cars, saleCars, aProp, aPayer,
+      aTotal: $('#a-total') ? $('#a-total').value : '',
+      vTotal: $('#v-total') ? $('#v-total').value : ''
+    }))
+  }catch(e){}
+}
+function loadDraft(){ try{ const raw = localStorage.getItem(DRAFT_KEY); return raw ? JSON.parse(raw) : null }catch(e){ return null } }
+function clearDraft(){ try{ localStorage.removeItem(DRAFT_KEY) }catch(e){} }
 let coefCache = null
 
 async function getCoefficients(){
@@ -750,6 +1060,7 @@ function openAdd(m){
   addStep = 'cars'
   $('#add-title').textContent = m==='achat' ? 'Achat' : 'Vente'
   cars = []; saleCars = []
+  $('#a-total').value = ''; $('#v-total').value = ''
   renderCarsList()
   resetCarForm()
   // Repart de zéro à chaque nouvel achat : pas d'héritage du propriétaire/payeur précédent
@@ -768,9 +1079,10 @@ $('#add-close').addEventListener('click', ()=>{
   if(addStep==='total'){
     addStep='cars'
     show($('#add-achat-total'),false); show($('#add-vente-total'),false); show($('#add-cars'),true)
+    saveDraft()
     return
   }
-  view('app')
+  clearDraft(); view('app')
 })
 
 /* ---- recherche / choix d'un modèle (achat) ---- */
@@ -892,6 +1204,7 @@ $('#c-add').addEventListener('click', async ()=>{
     let poids = cSel.prix_scelle_affiche ? cSel._valeurEstimee : parseFloat(($('#c-val').value||'').replace(',','.'))
     if(!(poids>0)){ cMsg("Indique une valeur estimée pour cette voiture.",'err'); return }
     cars.push({ ref:cSel.ref, nom:cSel.nom, numeroSet:cSel.numero_set_lego, etat:cEtat, minifig:cMinifig, poids })
+    feedback('add')
     resetCarForm(); renderCarsList()
   }
 })
@@ -906,6 +1219,7 @@ $('#c-ref').addEventListener('input', ()=>{
     el.innerHTML='<div><b>'+esc(a.nom||a.ref)+'</b> <small>Set '+esc(a.numero_set_lego||a.ref)+' · '+ETAT_LABEL[a.etat]+' · '+propChip(a.proprietaire)+'</small></div><small>'+eur(a.cout_achat)+'</small>'
     el.addEventListener('click', ()=>{
       saleCars.push({ id:a.id, nom:a.nom||a.ref, ref:a.ref, numeroSet:a.numero_set_lego, etat:a.etat, proprietaire:a.proprietaire, poids: Number(a.valeur_estimee||a.cout_achat||1) })
+      feedback('add')
       $('#c-ref').value=''; box.innerHTML=''; renderCarsList()
     })
     box.appendChild(el)
@@ -921,10 +1235,11 @@ function renderCarsList(){
     const meta = mode==='achat' ? (setTxt+ETAT_LABEL[c.etat]+(c.minifig?' · minifig':'')+' · poids '+eur(c.poids)) : (setTxt+ETAT_LABEL[c.etat]+' · '+propChip(c.proprietaire))
     el.innerHTML='<div class="l"><b>'+esc(c.nom)+'</b><small>'+meta+'</small></div>'
     const rm=document.createElement('button'); rm.className='linkish'; rm.textContent='retirer'
-    rm.addEventListener('click', ()=>{ list.splice(i,1); renderCarsList() }); el.appendChild(rm)
+    rm.addEventListener('click', ()=>{ list.splice(i,1); feedback('remove'); renderCarsList() }); el.appendChild(rm)
     box.appendChild(el)
   })
   show($('#cars-empty-hint'), list.length===0)
+  saveDraft()
 }
 
 $('#cars-next').addEventListener('click', ()=>{
@@ -933,9 +1248,10 @@ $('#cars-next').addEventListener('click', ()=>{
   addStep='total'
   if(mode==='achat'){ show($('#add-cars'),false); show($('#add-achat-total'),true); buildAchatRecap() }
   else { show($('#add-cars'),false); show($('#add-vente-total'),true); buildVenteRecap() }
+  saveDraft()
 })
-$('#a-back').addEventListener('click', ()=>{ addStep='cars'; show($('#add-achat-total'),false); show($('#add-cars'),true) })
-$('#v-back').addEventListener('click', ()=>{ addStep='cars'; show($('#add-vente-total'),false); show($('#add-cars'),true) })
+$('#a-back').addEventListener('click', ()=>{ addStep='cars'; show($('#add-achat-total'),false); show($('#add-cars'),true); saveDraft() })
+$('#v-back').addEventListener('click', ()=>{ addStep='cars'; show($('#add-vente-total'),false); show($('#add-cars'),true); saveDraft() })
 
 /* ---- Étape 2 (Achat) ---- */
 let aProp='max', aPayer='max'
@@ -961,16 +1277,16 @@ function renderPayerUI(){
     if(cfg.altVal) $('#a-payer-alt').textContent = cfg.altLabel
   }
 }
-wireSeg('#a-prop', v=>{ aProp=v; aPayer=PAYER_DEFAUT[v]; renderPayerUI() })
+wireSeg('#a-prop', v=>{ aProp=v; aPayer=PAYER_DEFAUT[v]; renderPayerUI(); saveDraft() })
 $('#a-payer-toggle').addEventListener('click', ()=>{
   const cfg=PAYER_UI[aProp]; if(!cfg) return
   aPayer = (aPayer===cfg.onVal) ? cfg.offVal : cfg.onVal
-  renderPayerUI()
+  renderPayerUI(); saveDraft()
 })
 $('#a-payer-alt').addEventListener('click', ()=>{
   const cfg=PAYER_UI[aProp]; if(!cfg || !cfg.altVal) return
   aPayer = (aPayer===cfg.altVal) ? cfg.onVal : cfg.altVal
-  renderPayerUI()
+  renderPayerUI(); saveDraft()
 })
 
 function achatCouts(total){
@@ -991,7 +1307,7 @@ function buildAchatRecap(){
   })
   $('#a-recap-note').textContent = cars.length+' voiture'+(cars.length>1?'s':'')+' · répartition au prorata du prix scellé — ne cherche pas la bonne affaire dans la marge estimée, elle est identique partout par construction.'
 }
-$('#a-total').addEventListener('input', buildAchatRecap)
+$('#a-total').addEventListener('input', ()=>{ buildAchatRecap(); saveDraft() })
 
 $('#a-save').addEventListener('click', async ()=>{
   const total=parseFloat(($('#a-total').value||'').replace(',','.'))
@@ -1006,8 +1322,9 @@ $('#a-save').addEventListener('click', async ()=>{
   })
   busy($('#a-save'), false)
   if(error){ aMsg(error.message,'err'); return }
+  feedback('success')
   flash('✅ '+cars.length+' voiture'+(cars.length>1?'s':'')+' ajoutée'+(cars.length>1?'s':''))
-  view('app'); switchTab('stock'); await refreshAll()
+  clearDraft(); view('app'); switchTab('stock'); await refreshAll()
 })
 function aMsg(t,k){ const m=$('#a-msg'); if(!t){show(m,false);return} m.textContent=t; m.className='msg '+(k||''); show(m,true) }
 
@@ -1025,6 +1342,7 @@ function buildVenteRecap(){
     box.appendChild(el)
   })
 }
+$('#v-total').addEventListener('input', saveDraft)
 $('#v-save').addEventListener('click', async ()=>{
   const total=parseFloat(($('#v-total').value||'').replace(',','.'))
   if(!(total>0)){ vMsg("Indique le montant encaissé.",'err'); return }
@@ -1038,8 +1356,9 @@ $('#v-save').addEventListener('click', async ()=>{
   }
   busy($('#v-save'), false)
   if(error){ vMsg(error.message,'err'); return }
+  feedback('success')
   flash('✅ '+saleCars.length+' voiture'+(saleCars.length>1?'s':'')+' vendue'+(saleCars.length>1?'s':''))
-  view('app'); switchTab('ventes'); await refreshAll()
+  clearDraft(); view('app'); switchTab('ventes'); await refreshAll()
 })
 function vMsg(t,k){ const m=$('#v-msg'); if(!t){show(m,false);return} m.textContent=t; m.className='msg '+(k||''); show(m,true) }
 

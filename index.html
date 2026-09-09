@@ -111,6 +111,10 @@
   /* Le bénéfice passe SOUS le montant encaissé : .r est en nowrap, sans ce display:block
      les deux chiffres se collaient sur une seule ligne (« 28,00 €+8,00 € »). */
   .row .r small{display:block;font-weight:650;font-size:12px;margin-top:2px}
+  .sortbar{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
+  .sortbtn{font-size:12px;font-weight:650;padding:7px 12px;border-radius:999px;border:0;
+    background:rgba(255,255,255,.05);color:var(--muted);cursor:pointer}
+  .sortbtn.on{background:var(--accent);color:var(--onaccent)}
 
   .hero{border-radius:22px;padding:17px;position:relative;overflow:hidden;
     background:linear-gradient(155deg,rgba(255,176,31,.15),rgba(255,120,20,.07));
@@ -308,8 +312,26 @@
       <!-- VENTES -->
       <div class="panel hidden" id="tab-ventes">
         <div class="paneltitle">Ventes</div>
+
+        <div class="card" id="ventes-total" style="cursor:pointer;margin-bottom:12px">
+          <div class="k" id="vt-periode">—</div>
+          <div class="v" id="vt-benef">—</div>
+          <div class="sub" id="vt-detail">—</div>
+        </div>
+
+        <div class="sortbar" id="ventes-sort">
+          <button class="sortbtn on" data-s="recentes">Récentes</button>
+          <button class="sortbtn" data-s="benefice">Bénéfice</button>
+          <button class="sortbtn" data-s="rapides">Rapides</button>
+        </div>
+
         <div id="ventes-list" class="list"></div>
         <div id="ventes-empty" class="empty hidden">Aucune vente enregistrée pour l'instant.</div>
+        <div class="card hidden" id="ventes-record" style="border-color:rgba(255,176,31,.35);background:rgba(255,176,31,.06);margin-top:12px">
+          <div class="k" style="color:var(--accent)">Ton record</div>
+          <div class="v" id="vr-marge">—</div>
+          <div class="sub" id="vr-detail">—</div>
+        </div>
       </div>
 
       <!-- BILAN — les 3 poches séparées, pour ne jamais les mélanger -->
@@ -810,9 +832,95 @@ function marginTag(v){
   const cls = m>0?'pos':m<0?'neg':''
   return '<small class="'+cls+'">'+(m>0?'+':'')+eur(m)+'</small>'
 }
-async function loadVentes(){
-  const { data } = await supabase.from('v_ventes_detail').select('*').order('date_vente',{ascending:false})
-  const rows=data||[]; const box=$('#ventes-list'); box.innerHTML=''; show($('#ventes-empty'), rows.length===0)
+let ventesRows = []
+let venteTri = 'recentes'
+let venteTriInverse = false
+let ventePeriode = 'mois'   // 'mois' | 'tout' — bascule en touchant le bandeau
+
+// Les voitures de Jojo sont suivies pour la logistique mais n'entrent dans aucun
+// indicateur de résultat de Max (§7) : elles sortent du total et du record.
+const ventesMax = () => ventesRows.filter(v => v.proprietaire !== 'jojo')
+const moisCourant = () => new Date().toISOString().slice(0,7)
+const MOIS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre']
+
+function renderVentesTotal(){
+  const dansPeriode = v => ventePeriode==='tout' || (v.date_vente||'').slice(0,7)===moisCourant()
+  const lot = ventesMax().filter(dansPeriode)
+  const m = +moisCourant().slice(5,7)
+  $('#vt-periode').textContent = (ventePeriode==='tout' ? 'Depuis le début' : MOIS[m-1])
+    + ' — ' + lot.length + ' vente' + (lot.length>1?'s':'')
+  const encaisse = lot.reduce((t,v)=>t+Number(v.montant_encaisse||0),0)
+  // Un bénéfice ne se calcule que sur les ventes dont le coût est connu (§5, règle 1).
+  const chiffrables = lot.filter(v=>v.cout_sortie!=null && v.marge_reelle!=null)
+  const cout  = chiffrables.reduce((t,v)=>t+Number(v.cout_sortie||0),0)
+  const benef = chiffrables.reduce((t,v)=>t+Number(v.marge_reelle||0),0)
+  const partJM = chiffrables.filter(v=>v.proprietaire==='jm').reduce((t,v)=>t+Number(v.marge_reelle||0),0)/2
+  const el=$('#vt-benef')
+  el.textContent = (benef>0?'+':'')+eur(benef)
+  el.className = 'v '+(benef>0?'pos':benef<0?'neg':'')
+  let d = eur(encaisse)+' encaissés · '+eur(cout)+' de coût'
+  if(partJM!==0) d += ' · dont ta part : '+eur(benef-partJM)
+  if(chiffrables.length < lot.length) d += ' · '+(lot.length-chiffrables.length)+' sans coût connu'
+  $('#vt-detail').textContent = d
+}
+
+function renderVentesRecord(){
+  const avecMarge = ventesMax().filter(v=>v.marge_reelle!=null)
+  show($('#ventes-record'), avecMarge.length>0)
+  if(avecMarge.length===0) return
+  const best = avecMarge.reduce((a,b)=> Number(b.marge_reelle)>Number(a.marge_reelle)?b:a)
+  $('#vr-marge').textContent = '+'+eur(Number(best.marge_reelle))
+  $('#vr-marge').className = 'v pos'
+  $('#vr-detail').textContent = (best.nom||best.ref)
+    + (best.date_vente ? ' · vendue le '+best.date_vente : '')
+    + (best.rotation_jours!=null ? ' · partie en '+best.rotation_jours+' j' : '')
+}
+
+function ventesTriees(){
+  const r = ventesRows.slice()
+  if(venteTri==='benefice'){
+    // Sans coût connu, pas de bénéfice : ces lignes vont en fin de liste, jamais en tête.
+    r.sort((a,b)=>{
+      const ma=a.marge_reelle, mb=b.marge_reelle
+      if(ma==null && mb==null) return 0
+      if(ma==null) return 1
+      if(mb==null) return -1
+      return venteTriInverse ? Number(ma)-Number(mb) : Number(mb)-Number(ma)
+    })
+  } else if(venteTri==='rapides'){
+    r.sort((a,b)=>{
+      const ra=a.rotation_jours, rb=b.rotation_jours
+      if(ra==null && rb==null) return 0
+      if(ra==null) return 1
+      if(rb==null) return -1
+      return Number(ra)-Number(rb)
+    })
+  } else {
+    r.sort((a,b)=> (a.date_vente||'') < (b.date_vente||'') ? 1 : -1)
+  }
+  return r
+}
+
+$('#ventes-total').addEventListener('click', ()=>{
+  ventePeriode = ventePeriode==='mois' ? 'tout' : 'mois'
+  renderVentesTotal()
+})
+$('#ventes-sort').addEventListener('click', e=>{
+  const b = e.target.closest('.sortbtn'); if(!b) return
+  const s = b.dataset.s
+  // Deuxième appui sur Bénéfice : on inverse, et les pires ventes remontent —
+  // ce sont elles qui apprennent quelles références ne plus racheter.
+  venteTriInverse = (s==='benefice' && venteTri==='benefice') ? !venteTriInverse : false
+  venteTri = s
+  document.querySelectorAll('#ventes-sort .sortbtn').forEach(x=>x.classList.toggle('on', x.dataset.s===s))
+  const btn = $('#ventes-sort .sortbtn[data-s="benefice"]')
+  if(btn) btn.textContent = (s==='benefice' && venteTriInverse) ? 'Bénéfice ↑' : 'Bénéfice'
+  renderVentesListe()
+})
+
+function renderVentesListe(){
+  const rows = ventesTriees()
+  const box=$('#ventes-list'); box.innerHTML=''; show($('#ventes-empty'), rows.length===0)
   rows.forEach(v=>{
     const el=document.createElement('div'); el.className='row'; el.style.cursor='pointer'
     el.innerHTML='<div class="l"><b>'+esc(v.nom||v.ref)+'</b><small>Set '+esc(v.numero_set_lego||v.ref)+' · '+ETAT_LABEL[v.etat]+' · '+propChip(v.proprietaire)+'</small></div>'
@@ -820,6 +928,12 @@ async function loadVentes(){
     el.addEventListener('click', ()=>openVenteDetail(v))
     box.appendChild(el)
   })
+}
+
+async function loadVentes(){
+  const { data } = await supabase.from('v_ventes_detail').select('*').order('date_vente',{ascending:false})
+  ventesRows = data||[]
+  renderVentesTotal(); renderVentesListe(); renderVentesRecord()
 }
 let vdCurrent = null
 function openVenteDetail(v){

@@ -108,6 +108,9 @@
     display:flex;justify-content:space-between;align-items:center;gap:10px;backdrop-filter:blur(12px)}
   .row .l b{font-weight:650} .row .l small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
   .row .r{text-align:right;font-weight:700;white-space:nowrap}
+  /* Le bénéfice passe SOUS le montant encaissé : .r est en nowrap, sans ce display:block
+     les deux chiffres se collaient sur une seule ligne (« 28,00 €+8,00 € »). */
+  .row .r small{display:block;font-weight:650;font-size:12px;margin-top:2px}
 
   .hero{border-radius:22px;padding:17px;position:relative;overflow:hidden;
     background:linear-gradient(155deg,rgba(255,176,31,.15),rgba(255,120,20,.07));
@@ -424,6 +427,7 @@
           <div class="card"><div class="k">Encaissé</div><div class="v small" id="vd-encaisse">—</div></div>
           <div class="card"><div class="k">Coût de sortie</div><div class="v small" id="vd-cout">—</div></div>
           <div class="card"><div class="k">Marge réelle</div><div class="v small" id="vd-marge">—</div></div>
+          <div class="card hidden" id="vd-part-wrap" style="grid-column:1/-1"><div class="k">Ce qui te revient — moitié JM</div><div class="v small" id="vd-part">—</div></div>
         </div>
         <p class="note" id="vd-rotation-note">—</p>
         <button class="btn secondary" id="vd-copy">Copier le titre</button>
@@ -530,6 +534,7 @@
           <span id="a-payer-label" style="font-size:15px;font-weight:650">Toi</span>
         </div>
         <button class="linkish" id="a-payer-alt" style="align-self:flex-start;padding:2px 0"></button>
+        <p class="note" id="a-payer-effet" style="margin:2px 0 0"></p>
       </div>
 
       <div class="field">
@@ -660,7 +665,7 @@ const PAYER_DEFAUT = { max:'max', jm:'max', jojo:'jojo' }
 // demande pas). Pas de toggle du tout pour "Max" : le payeur est toujours lui.
 const PAYER_UI = {
   max:  null,
-  jm:   { onVal:'max', onLabel:'Toi', offVal:'50-50', offLabel:'50-50 (rien à Jojo)', altVal:'jojo', altLabel:'Jojo a payé cette fois', altActiveLabel:'Jojo (il a tout payé)' },
+  jm:   { onVal:'max', onLabel:'Toi', offVal:'jojo', offLabel:'Jojo', altVal:'50-50', altLabel:'On a payé moitié-moitié', altActiveLabel:'Moitié-moitié' },
   jojo: { onVal:'max', onLabel:'Toi (tu as une créance)', offVal:'jojo', offLabel:'Jojo (rien ne bouge)', altVal:null }
 }
 
@@ -797,13 +802,21 @@ async function copyText(t){
 $('#sd-copy').addEventListener('click', ()=>{ if(!sdCurrent) return; copyText((sdCurrent.nom||sdCurrent.ref)+' — '+ETAT_LABEL[sdCurrent.etat]+(sdCurrent.minifig?' · minifig':'')) })
 $('#stock-sheet-close').addEventListener('click', ()=>show($('#stock-sheet'), false))
 $('#stock-sheet').addEventListener('click', e=>{ if(e.target.id==='stock-sheet') show($('#stock-sheet'), false) })
+// Le bénéfice réel de la voiture : encaissé − coût de sortie. Absent tant que le coût
+// n'est pas connu — un chiffre sans base ne s'affiche pas (§5, règle 1).
+function marginTag(v){
+  if(v.cout_sortie==null || v.marge_reelle==null) return ''
+  const m = Number(v.marge_reelle)
+  const cls = m>0?'pos':m<0?'neg':''
+  return '<small class="'+cls+'">'+(m>0?'+':'')+eur(m)+'</small>'
+}
 async function loadVentes(){
   const { data } = await supabase.from('v_ventes_detail').select('*').order('date_vente',{ascending:false})
   const rows=data||[]; const box=$('#ventes-list'); box.innerHTML=''; show($('#ventes-empty'), rows.length===0)
   rows.forEach(v=>{
     const el=document.createElement('div'); el.className='row'; el.style.cursor='pointer'
     el.innerHTML='<div class="l"><b>'+esc(v.nom||v.ref)+'</b><small>Set '+esc(v.numero_set_lego||v.ref)+' · '+ETAT_LABEL[v.etat]+' · '+propChip(v.proprietaire)+'</small></div>'
-      +'<div class="r">'+eur(v.montant_encaisse)+'</div>'
+      +'<div class="r">'+eur(v.montant_encaisse)+marginTag(v)+'</div>'
     el.addEventListener('click', ()=>openVenteDetail(v))
     box.appendChild(el)
   })
@@ -818,6 +831,12 @@ function openVenteDetail(v){
   $('#vd-cout').textContent = eur(v.cout_sortie)
   const m = Number(v.marge_reelle||0)
   $('#vd-marge').textContent = eur(m); $('#vd-marge').className = 'v small '+(m>0?'pos':m<0?'neg':'')
+  const estJM = v.proprietaire==='jm'
+  show($('#vd-part-wrap'), estJM && v.marge_reelle!=null)
+  if(estJM && v.marge_reelle!=null){
+    $('#vd-part').textContent = eur(m/2)
+    $('#vd-part').className = 'v small '+(m>0?'pos':m<0?'neg':'')
+  }
   $('#vd-rotation-note').textContent = 'Resté '+(v.rotation_jours??'—')+(v.rotation_jours!=null?' j':'')+' en stock avant de partir.'
   show($('#vente-sheet'), true)
 }
@@ -1256,9 +1275,34 @@ $('#v-back').addEventListener('click', ()=>{ addStep='cars'; show($('#add-vente-
 /* ---- Étape 2 (Achat) ---- */
 let aProp='max', aPayer='max'
 segPick($('#a-prop'),'max')
+// Ce que cet achat va faire bouger sur l'ardoise, annoncé AVANT de valider (§8 :
+// à chaque mouvement, la nouvelle position est dite). Convention du solde :
+// positif = Max doit à Jojo · négatif = Jojo doit à Max.
+function mouvementJojo(prop, payeur, total){
+  if(prop==='jm'   && payeur==='max')  return -total/2
+  if(prop==='jm'   && payeur==='jojo') return  total/2
+  if(prop==='jojo' && payeur==='max')  return -total
+  return 0
+}
+function positionJojo(solde){
+  if(Math.abs(solde) < 0.005) return 'vous êtes à jour'
+  return solde < 0 ? 'Jojo te devra '+eur(-solde) : 'tu devras '+eur(solde)+' à Jojo'
+}
+function renderPayerEffet(){
+  const el = $('#a-payer-effet'); if(!el) return
+  const total = parseFloat(($('#a-total').value||'').replace(',','.'))
+  if(!PAYER_UI[aProp] || !(total>0)){ el.textContent=''; return }
+  const mvt = mouvementJojo(aProp, aPayer, total)
+  const tete = mvt === 0
+    ? 'Rien ne bouge entre vous.'
+    : (mvt < 0 ? 'La dette de Jojo monte de '+eur(-mvt)+'.' : 'On déduit '+eur(mvt)+' de ce que Jojo te doit.')
+  el.textContent = tete+' Après cet achat : '+positionJojo(jojoSolde + mvt)+'.'
+}
+
 function renderPayerUI(){
   const cfg = PAYER_UI[aProp]
   show($('#a-payer-row'), !!cfg)
+  renderPayerEffet()
   if(!cfg) return
   const inAlt = !!cfg.altVal && aPayer===cfg.altVal
   const isOn = aPayer===cfg.onVal
@@ -1276,6 +1320,7 @@ function renderPayerUI(){
     show($('#a-payer-alt'), !!cfg.altVal)
     if(cfg.altVal) $('#a-payer-alt').textContent = cfg.altLabel
   }
+  renderPayerEffet()
 }
 wireSeg('#a-prop', v=>{ aProp=v; aPayer=PAYER_DEFAUT[v]; renderPayerUI(); saveDraft() })
 $('#a-payer-toggle').addEventListener('click', ()=>{
@@ -1307,7 +1352,7 @@ function buildAchatRecap(){
   })
   $('#a-recap-note').textContent = cars.length+' voiture'+(cars.length>1?'s':'')+' · répartition au prorata du prix scellé — ne cherche pas la bonne affaire dans la marge estimée, elle est identique partout par construction.'
 }
-$('#a-total').addEventListener('input', ()=>{ buildAchatRecap(); saveDraft() })
+$('#a-total').addEventListener('input', ()=>{ buildAchatRecap(); renderPayerEffet(); saveDraft() })
 
 $('#a-save').addEventListener('click', async ()=>{
   const total=parseFloat(($('#a-total').value||'').replace(',','.'))

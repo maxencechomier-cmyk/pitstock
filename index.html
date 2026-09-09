@@ -115,6 +115,12 @@
   .sortbtn{font-size:12px;font-weight:650;padding:7px 12px;border-radius:999px;border:0;
     background:rgba(255,255,255,.05);color:var(--muted);cursor:pointer}
   .sortbtn.on{background:var(--accent);color:var(--onaccent)}
+  .annonce{background:var(--glass);border:0.5px solid var(--glass-brd);border-radius:14px;overflow:hidden;margin-top:4px}
+  .annonce-head{width:100%;background:none;border:0;color:var(--ink);font:650 14px/1 inherit;
+    padding:14px 15px;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+  .annonce-txt{background:var(--field);border:0.5px solid var(--field-brd);border-radius:10px;
+    padding:11px 12px;font-size:13px;line-height:1.55;color:var(--ink);margin-top:6px;
+    -webkit-user-select:text;user-select:text}
 
   .hero{border-radius:22px;padding:17px;position:relative;overflow:hidden;
     background:linear-gradient(155deg,rgba(255,176,31,.15),rgba(255,120,20,.07));
@@ -422,7 +428,38 @@
           <div class="card"><div class="k">Prix plancher</div><div class="v small" id="sd-plancher">—</div></div>
         </div>
         <div id="sd-note" class="note hidden"></div>
-        <button class="btn secondary" id="sd-copy">Copier le titre</button>
+
+        <div class="annonce">
+          <button class="annonce-head" id="sd-annonce-head" type="button" aria-expanded="false">
+            <span>Mon annonce</span><span id="sd-chev">⌄</span>
+          </button>
+          <div id="sd-annonce-body" class="hidden" style="padding:14px 15px">
+            <label style="font-size:11px;color:var(--muted)">Titre <span id="sd-titre-len"></span></label>
+            <div class="annonce-txt" id="sd-titre">—</div>
+            <button class="btn secondary" id="sd-copy" style="margin-top:8px">Copier le titre</button>
+
+            <label style="font-size:11px;color:var(--muted);display:block;margin-top:16px">Description</label>
+            <div class="annonce-txt" id="sd-desc" style="white-space:pre-wrap">—</div>
+            <button class="btn secondary" id="sd-copy-desc" style="margin-top:8px">Copier la description</button>
+
+            <button class="linkish" id="sd-perso-open" style="margin-top:14px;padding:2px 0">Personnaliser ce modèle</button>
+            <div id="sd-perso" class="hidden" style="margin-top:10px">
+              <label style="font-size:11px;color:var(--muted)">Couleur de la voiture</label>
+              <div class="seg" id="sd-couleur" style="flex-wrap:wrap">
+                <button class="segbtn" data-v="">Aucune</button><button class="segbtn" data-v="⚫">⚫</button><button class="segbtn" data-v="⚪">⚪</button><button class="segbtn" data-v="🔴">🔴</button><button class="segbtn" data-v="🔵">🔵</button><button class="segbtn" data-v="🟠">🟠</button><button class="segbtn" data-v="🟡">🟡</button><button class="segbtn" data-v="🟢">🟢</button>
+              </div>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-top:12px">Licence (laisse vide s'il n'y en a pas)</label>
+              <input id="sd-licence" type="text" placeholder="Fast &amp; Furious" />
+              <label style="font-size:11px;color:var(--muted);display:block;margin-top:12px">Phrase sur ce modèle</label>
+              <input id="sd-phrase" type="text" placeholder="La Charger de Dom, une des plus reconnaissables de la gamme." />
+              <label style="font-size:11px;color:var(--muted);display:block;margin-top:12px">Mots-clés en plus (personnage, surnom…)</label>
+              <input id="sd-motscles" type="text" placeholder="dom" />
+              <div id="sd-perso-msg" class="msg hidden"></div>
+              <button class="btn" id="sd-perso-save" style="margin-top:12px">Enregistrer pour ce modèle</button>
+              <p class="note">Écrit une fois pour le set, repris sur toutes les voitures de cette référence.</p>
+            </div>
+          </div>
+        </div>
         <button class="linkish center" id="stock-sheet-close">Fermer</button>
       </div>
     </div>
@@ -815,13 +852,149 @@ function openStockDetail(a){
   $('#sd-affiche').textContent = eur(a.prix_affiche)
   $('#sd-plancher').textContent = eur(a.prix_plancher)
   show($('#sd-note'), false)
+  sdCat = null
+  show($('#sd-annonce-body'), false); show($('#sd-perso'), false)
+  $('#sd-annonce-head').setAttribute('aria-expanded','false'); $('#sd-chev').textContent='⌄'
   show($('#stock-sheet'), true)
 }
 async function copyText(t){
   try{ await navigator.clipboard.writeText(t); flash('📋 Copié') }
   catch(e){ flash('Impossible de copier ici') }
 }
-$('#sd-copy').addEventListener('click', ()=>{ if(!sdCurrent) return; copyText((sdCurrent.nom||sdCurrent.ref)+' — '+ETAT_LABEL[sdCurrent.etat]+(sdCurrent.minifig?' · minifig':'')) })
+/* ============ L'ANNONCE — titre et description, fabriqués à l'affichage ============
+   Rien n'est écrit en dur : le texte est assemblé à partir du catalogue (nom, numéro,
+   couleur, licence, phrase du modèle) et de la voiture (état, minifig, note).
+   Trois règles tenues avec Max le 09/09 :
+   1. Aucune promesse invérifiable — jamais « complet », « aucun défaut », « sans fumeur ».
+      On renvoie au jugement de l'acheteur : « état visible sur les photos ».
+   2. La phrase d'accroche parle du MODÈLE, jamais du classement de Max. « Ma préférée »
+      répété sur trente annonces se contredit tout seul.
+   3. Elle est rangée sur la référence : écrite une fois, reprise sur tous les exemplaires. */
+
+let sdCat = null   // ligne catalogue de la référence ouverte
+
+const ETAT_ANNONCE = {
+  neuf_scelle : 'Neuf, boîte scellée, jamais ouverte.',
+  notice_boite: 'Vendu avec sa boîte et sa notice.',
+  notice_seule: 'Vendu avec sa notice, sans la boîte.',
+  nu          : 'Vendu sans boîte ni notice.',
+  incomplet   : 'Set incomplet, les manques sont visibles sur les photos.'
+}
+
+const motCle = t => (t||'').toLowerCase().replace(/&/g,'and')
+  .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+  .replace(/[^a-z0-9]/g,'')
+
+// Un nom de set colle mal en un seul tag : « 1970 Dodge Charger R/T » donnerait
+// #1970dodgechargerrt, que personne ne tape. On garde les deux premiers vrais mots.
+const motCleNom = t => (t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+  .split(/[^a-z0-9]+/).filter(m=>m.length>2 && !/^\d+$/.test(m)).slice(0,2).join('')
+
+function titreAnnonce(a, cat){
+  const c = cat||{}
+  const num = a.numero_set_lego || a.ref
+  const parts = ['LEGO Speed Champions –']
+  if(c.licence) parts.push(c.licence)
+  parts.push(a.nom || a.ref)
+  return ((c.couleur ? c.couleur+' ' : '') + parts.join(' ') + ' (Set '+num+')').trim()
+}
+
+function descriptionAnnonce(a, cat){
+  const c = cat||{}
+  // Gabarit écrit par Max le 09/09. Un bloc = un paragraphe, séparés par une ligne
+  // vide : sur Vinted la description se lit au pouce, un pavé compact ne se lit pas.
+  // Le titre est répété en tête — c'est ce que la recherche indexe en premier.
+  const B = []
+  B.push(titreAnnonce(a, c))
+  if(c.phrase) B.push(c.phrase)
+  B.push(ETAT_ANNONCE[a.etat] || '')
+  B.push(a.minifig
+    ? 'Minifigurine pilote visible sur les photos, incluse dans la vente.'
+    : 'Vendu sans minifigurine.')
+  if(a.note) B.push(a.note)
+  B.push('État visible sur les photos, jugez par vous-même.')
+  B.push('Emballage renforcé, expédition rapide.')
+  B.push("N'hésitez pas à vous abonner à mon compte pour ne pas rater les prochains drops et sorties de produits — soyez alerté en premier et profitez-en avant les autres !")
+  B.push('Offres sérieuses bienvenues 😊')
+  const perso = (c.motscles||'').split(/[\s,#]+/).map(motCle)
+  const tags = ['lego','legospeedchampions', motCle(c.licence), motCleNom(a.nom),
+                motCle(c.marque||a.marque), ...perso, 'legocars', 'legocollection']
+  const uniq = [...new Set(tags.filter(t=>t && t.length>2))]
+  B.push(uniq.map(t=>'#'+t).join(' '))
+  return B.filter(Boolean).join('\n\n')
+}
+
+async function chargerAnnonce(){
+  const a = sdCurrent; if(!a) return
+  const { data } = await supabase.from('catalogue').select('*').eq('ref', a.ref).maybeSingle()
+  sdCat = data || {}
+  const t = titreAnnonce(a, sdCat)
+  $('#sd-titre').textContent = t
+  $('#sd-titre-len').textContent = '— '+t.length+' caractères'
+  $('#sd-desc').textContent = descriptionAnnonce(a, sdCat)
+  // Sans cette ligne, enregistrer sans toucher aux couleurs écraserait la référence
+  // ouverte avec la couleur de la voiture consultée juste avant.
+  sdCouleur = sdCat.couleur || ''
+  segPick($('#sd-couleur'), sdCouleur)
+  $('#sd-licence').value = sdCat.licence || ''
+  $('#sd-phrase').value  = sdCat.phrase  || ''
+  $('#sd-motscles').value = sdCat.motscles || ''
+}
+
+$('#sd-annonce-head').addEventListener('click', ()=>{
+  const body = $('#sd-annonce-body'), ouvert = body.classList.contains('hidden')
+  show(body, ouvert)
+  $('#sd-annonce-head').setAttribute('aria-expanded', String(ouvert))
+  $('#sd-chev').textContent = ouvert ? '⌃' : '⌄'
+  if(ouvert) chargerAnnonce()
+})
+
+$('#sd-perso-open').addEventListener('click', ()=>{
+  const p = $('#sd-perso'); show(p, p.classList.contains('hidden'))
+})
+
+let sdCouleur = ''
+wireSeg('#sd-couleur', v=>{ sdCouleur = v })
+
+$('#sd-perso-save').addEventListener('click', async ()=>{
+  if(!sdCurrent) return
+  const b = $('#sd-perso-save'); busy(b, true)
+  const { error } = await supabase.from('catalogue').update({
+    couleur: sdCouleur,
+    licence: $('#sd-licence').value.trim(),
+    phrase:  $('#sd-phrase').value.trim(),
+    motscles: $('#sd-motscles').value.trim()
+  }).eq('ref', sdCurrent.ref)
+  busy(b, false)
+  const m = $('#sd-perso-msg')
+  if(error){ m.textContent = error.message; m.className='msg err'; show(m, true); return }
+  show(m, false); show($('#sd-perso'), false)
+  await chargerAnnonce()
+  flash('✅ Modèle personnalisé')
+})
+
+// Copier le titre = Max est en train de publier. L'app le note toute seule : la voiture
+// passe En ligne, sans un geste de plus (principe n°3 — zéro saisie redondante).
+// Elle ne sort du stock qu'à la VENTE, jamais à la mise en ligne (§12).
+async function marquerEnLigne(){
+  const a = sdCurrent
+  if(!a || a.statut !== 'en_stock') return
+  const { error } = await supabase.from('articles').update({ statut:'en_ligne' }).eq('id', a.id)
+  if(error) return
+  a.statut = 'en_ligne'
+  flash('🏷️ Passée en ligne')
+  await loadStock()
+}
+
+$('#sd-copy').addEventListener('click', async ()=>{
+  if(!sdCurrent) return
+  await copyText(titreAnnonce(sdCurrent, sdCat))
+  marquerEnLigne()
+})
+$('#sd-copy-desc').addEventListener('click', ()=>{
+  if(!sdCurrent) return
+  copyText(descriptionAnnonce(sdCurrent, sdCat))
+})
 $('#stock-sheet-close').addEventListener('click', ()=>show($('#stock-sheet'), false))
 $('#stock-sheet').addEventListener('click', e=>{ if(e.target.id==='stock-sheet') show($('#stock-sheet'), false) })
 // Le bénéfice réel de la voiture : encaissé − coût de sortie. Absent tant que le coût

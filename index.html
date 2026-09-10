@@ -372,6 +372,12 @@
 // Face ID sans jamais les bloquer (le voile disparaît du flux à la fin).
 ;(function ouverture(){
   const o = document.getElementById('ouv'); if(!o) return
+  // L'app se recharge une fois pendant la connexion : sans ce garde-fou,
+  // la séquence repartait de zéro et on la voyait deux fois.
+  try{
+    if(sessionStorage.getItem('ouv.joue')){ o.classList.add('fini'); return }
+    sessionStorage.setItem('ouv.joue','1')
+  }catch(_){}
   setTimeout(()=>o.classList.add('on'), 380)
   setTimeout(()=>o.classList.add('part'), 2350)     // le logo seul s'en va
   setTimeout(()=>o.classList.add('efface'), 3350)   // le voile part ensuite, pas avant

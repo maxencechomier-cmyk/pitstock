@@ -176,6 +176,81 @@
     .ch-pill,.ch-paint,#ch-cur{transition:none}
   }
 
+  /* ---------- L'ouverture : noir, logo, noir, app. Rien que des opacités ---------- */
+  #ouv{position:fixed;inset:0;z-index:999;background:#000;opacity:1;
+    display:flex;align-items:center;justify-content:center;will-change:opacity}
+  #ouv.part{opacity:0;transition:opacity 1.15s ease-in-out}
+  #ouv.fini{display:none}
+  #ouv{overflow:hidden}
+  #ouv-cadre{position:relative;width:142%;max-width:560px;opacity:0;transform:scale(.975);
+    will-change:transform,opacity}
+  #ouv.on #ouv-cadre{opacity:1;transform:scale(1.012);
+    transition:opacity 1.5s ease-out,transform 4.5s cubic-bezier(.22,1,.36,1)}
+  #ouv.part #ouv-cadre{opacity:0;transform:scale(1.06);
+    transition:opacity 1.25s ease-in,transform 1.5s ease-in}
+  #ouv-logo{display:block;width:100%;height:auto}
+  /* Le reflet : en color-dodge le noir reste noir, seul le chrome s'embrase. */
+  #ouv-sheen{position:absolute;inset:-10% -30%;pointer-events:none;opacity:0;
+    mix-blend-mode:color-dodge;transform:translateX(-60%) skewX(-16deg);
+    background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.03) 32%,
+      rgba(255,255,255,.07) 44%,rgba(255,255,255,.14) 50%,rgba(255,255,255,.07) 56%,
+      rgba(255,255,255,.02) 68%,transparent 100%);
+    -webkit-mask-image:linear-gradient(180deg,transparent 0%,#000 14%,#000 86%,transparent 100%);
+    mask-image:linear-gradient(180deg,transparent 0%,#000 14%,#000 86%,transparent 100%)}
+  #ouv.on #ouv-sheen{opacity:1;animation:ouv-glint 3s cubic-bezier(.45,0,.35,1) 1.7s both}
+  @keyframes ouv-glint{from{transform:translateX(-60%) skewX(-16deg)}
+                       to{transform:translateX(160%) skewX(-16deg)}}
+  @media (prefers-reduced-motion:reduce){
+    #ouv,#ouv-cadre,#ouv-sheen{transition:none!important;animation:none!important}
+  }
+
+  /* ---------- La carte bénéfice des Ventes ---------- */
+  .vcard{position:relative;overflow:hidden;border-radius:22px;cursor:pointer;margin-bottom:12px;
+    background:#08080a;border:1px solid rgba(255,255,255,.08);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 24px 60px -30px #000;
+    transition:transform .22s cubic-bezier(.32,.72,0,1)}
+  .vcard:active{transform:scale(.99)}
+  .vgrid{position:absolute;inset:0;pointer-events:none;opacity:.5;
+    background-image:linear-gradient(rgba(255,255,255,.026) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(255,255,255,.026) 1px,transparent 1px);
+    background-size:24px 24px}
+  .vhalo{position:absolute;left:-30px;top:-60px;width:240px;height:200px;pointer-events:none;
+    background:radial-gradient(circle at 30% 40%,rgba(58,209,154,.16),transparent 62%)}
+  .vtop{position:relative;padding:18px 18px 16px}
+  .vtitle{display:flex;align-items:center;gap:8px;font:700 10.5px/1 inherit;letter-spacing:2.2px;
+    text-transform:uppercase;color:#5b5b62}
+  .vtitle i{width:6px;height:6px;border-radius:50%;background:var(--good);box-shadow:0 0 10px var(--good)}
+  .vmain{margin-top:15px;font:600 50px/1 -apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;
+    letter-spacing:-2.4px;color:var(--good);font-variant-numeric:tabular-nums;
+    text-shadow:0 0 30px rgba(58,209,154,.32)}
+  .vmain.neg{color:var(--bad);text-shadow:0 0 30px rgba(255,107,107,.3)}
+  .vmeta{display:flex;gap:7px;margin-top:15px;flex-wrap:wrap}
+  .vtag{font:700 9.5px/1 inherit;letter-spacing:1.5px;text-transform:uppercase;color:#8e8e96;
+    padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.07)}
+  .vtag.tap{color:var(--ink);border-color:rgba(255,255,255,.16)}
+  .vtag.warn{color:#ffcd6b;background:rgba(255,176,31,.10);border-color:rgba(255,176,31,.20)}
+  .vchev{position:absolute;top:19px;right:18px;width:20px;height:20px;color:#5b5b62;
+    transition:transform .34s cubic-bezier(.32,.72,0,1)}
+  .vcard.open .vchev{transform:rotate(180deg)}
+  .vdetail{position:relative;height:0;overflow:hidden;opacity:0;
+    transition:height .38s cubic-bezier(.32,.72,0,1),opacity .26s ease}
+  .vcard.open .vdetail{opacity:1}
+  .vinner{padding:16px 18px 18px;background:rgba(255,255,255,.022);
+    border-top:1px solid rgba(255,255,255,.07)}
+  .vrow{display:flex;justify-content:space-between;align-items:baseline;padding:11px 0;
+    font:500 13.5px/1 inherit;color:#8e8e96;font-variant-numeric:tabular-nums}
+  .vrow b{font-weight:600;color:var(--ink)}
+  .vrow.tot{border-top:1px solid rgba(255,255,255,.08);margin-top:5px;padding-top:14px}
+  .vrow.tot span{color:var(--ink);font-weight:600}
+  .vrow.tot b{color:var(--good)}
+  .vmine{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding:14px 15px;
+    border-radius:15px;background:linear-gradient(180deg,rgba(255,176,31,.10),rgba(255,176,31,.05));
+    border:1px solid rgba(255,176,31,.18)}
+  .vmine span{font:700 9.5px/1 inherit;letter-spacing:1.7px;text-transform:uppercase;color:#ffcd6b}
+  .vmine b{font:600 20px/1 inherit;color:var(--accent);font-variant-numeric:tabular-nums}
+  .vnote{font:500 11.5px/1.5 inherit;color:#5b5b62;margin-top:14px}
+
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .card{border-radius:18px;padding:13px 14px;background:var(--glass);border:1px solid var(--glass-brd);
     backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:var(--shadow)}
@@ -285,6 +360,34 @@
 </style>
 </head>
 <body>
+<!-- L'ouverture. Elle est dans le HTML, pas créée par le script : elle est donc
+     noire dès la toute première image affichée, et rien du chargement ni de la
+     demande Face ID ne transparaît derrière. -->
+<div id="ouv">
+  <div id="ouv-cadre">
+    <img id="ouv-logo" src="logo.png.jpeg" alt="" onerror="this.style.display='none'">
+    <div id="ouv-sheen"></div>
+  </div>
+</div>
+<script>
+// ══ L'ouverture ════════════════════════════════════════════════════════
+//  0,0 → 0,8 s   noir absolu
+//  0,8 → 2,3 s   le logo monte en fondu
+//  2,3 → 4,3 s   il tient · une lumière traverse le métal
+//  4,3 → 5,5 s   il redescend dans le noir
+//  5,5 → 6,1 s   noir absolu — le silence qui fait le générique
+//  6,1 → 7,2 s   le voile s'efface, l'app est là
+// Elle se déroule quoi qu'il arrive : elle masque le chargement et la demande
+// Face ID sans jamais les bloquer (le voile disparaît du flux à la fin).
+;(function ouverture(){
+  const o = document.getElementById('ouv'); if(!o) return
+  setTimeout(()=>o.classList.add('on'), 800)
+  setTimeout(()=>o.classList.add('part'), 4300)
+  setTimeout(()=>o.classList.add('fini'), 7400)
+})()
+</script>
+
+
 <div id="boot"><span class="spinner"></span></div>
 
 <div class="wrap hidden" id="root" data-ready="0">
@@ -366,10 +469,29 @@
       <div class="panel hidden" id="tab-ventes">
         <div class="paneltitle">Ventes</div>
 
-        <div class="card" id="ventes-total" style="cursor:pointer;margin-bottom:12px">
-          <div class="k" id="vt-periode">—</div>
-          <div class="v" id="vt-benef">—</div>
-          <div class="sub" id="vt-detail">—</div>
+        <div class="vcard" id="ventes-total">
+          <div class="vgrid"></div><div class="vhalo"></div>
+          <div class="vtop">
+            <svg class="vchev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            <div class="vtitle"><i></i>Ce que tu as gagné</div>
+            <div class="vmain" id="vt-benef">—</div>
+            <div class="vmeta">
+              <span class="vtag tap" id="vt-periode">—</span>
+              <span class="vtag" id="vt-nb">—</span>
+              <span class="vtag hidden" id="vt-marge">—</span>
+              <span class="vtag warn hidden" id="vt-manque">—</span>
+            </div>
+          </div>
+          <div class="vdetail" id="vt-detail">
+            <div class="vinner">
+              <div class="vrow"><span>Encaissé</span><b id="vt-encaisse">—</b></div>
+              <div class="vrow"><span>Coût des voitures</span><b id="vt-cout">—</b></div>
+              <div class="vrow tot"><span>Bénéfice</span><b id="vt-benef2">—</b></div>
+              <div class="vrow hidden" id="vt-ligne-jojo"><span>Part de Jojo sur les ventes JM</span><b id="vt-jojo">—</b></div>
+              <div class="vmine"><span>Ta part à toi</span><b id="vt-part">—</b></div>
+              <div class="vnote">Le coût retenu est le coût moyen du modèle, pas le prix d'un achat précis.</div>
+            </div>
+          </div>
         </div>
 
         <div class="sortbar" id="ventes-sort">
@@ -1090,21 +1212,38 @@ function renderVentesTotal(){
   const dansPeriode = v => ventePeriode==='tout' || (v.date_vente||'').slice(0,7)===moisCourant()
   const lot = ventesMax().filter(dansPeriode)
   const m = +moisCourant().slice(5,7)
-  $('#vt-periode').textContent = (ventePeriode==='tout' ? 'Depuis le début' : MOIS[m-1])
-    + ' — ' + lot.length + ' vente' + (lot.length>1?'s':'')
-  const encaisse = lot.reduce((t,v)=>t+Number(v.montant_encaisse||0),0)
   // Un bénéfice ne se calcule que sur les ventes dont le coût est connu (§5, règle 1).
+  // Et l'encaissé se calcule sur LES MÊMES ventes, sinon les trois lignes du détail
+  // ne s'additionnent plus et le bénéfice paraît plus gros qu'il n'est.
   const chiffrables = lot.filter(v=>v.cout_sortie!=null && v.marge_reelle!=null)
-  const cout  = chiffrables.reduce((t,v)=>t+Number(v.cout_sortie||0),0)
-  const benef = chiffrables.reduce((t,v)=>t+Number(v.marge_reelle||0),0)
-  const partJM = chiffrables.filter(v=>v.proprietaire==='jm').reduce((t,v)=>t+Number(v.marge_reelle||0),0)/2
-  const el=$('#vt-benef')
+  const encaisse = chiffrables.reduce((t,v)=>t+Number(v.montant_encaisse||0),0)
+  const cout     = chiffrables.reduce((t,v)=>t+Number(v.cout_sortie||0),0)
+  const benef    = chiffrables.reduce((t,v)=>t+Number(v.marge_reelle||0),0)
+  const partJM   = chiffrables.filter(v=>v.proprietaire==='jm')
+                              .reduce((t,v)=>t+Number(v.marge_reelle||0),0)/2
+
+  const el = $('#vt-benef')
   el.textContent = (benef>0?'+':'')+eur(benef)
-  el.className = 'v '+(benef>0?'pos':benef<0?'neg':'')
-  let d = eur(encaisse)+' encaissés · '+eur(cout)+' de coût'
-  if(partJM!==0) d += ' · dont ta part : '+eur(benef-partJM)
-  if(chiffrables.length < lot.length) d += ' · '+(lot.length-chiffrables.length)+' sans coût connu'
-  $('#vt-detail').textContent = d
+  el.className = 'vmain '+(benef<0?'neg':'')
+
+  $('#vt-periode').textContent = (ventePeriode==='tout' ? 'Depuis le début' : MOIS[m-1])
+  $('#vt-nb').textContent = lot.length + ' vente' + (lot.length>1?'s':'')
+  const marge = encaisse>0 ? Math.round(benef/encaisse*100) : null
+  show($('#vt-marge'), marge!==null); if(marge!==null) $('#vt-marge').textContent = marge+' % de marge'
+  const manque = lot.length - chiffrables.length
+  show($('#vt-manque'), manque>0)
+  if(manque>0) $('#vt-manque').textContent = manque+' sans coût connu'
+
+  $('#vt-encaisse').textContent = eur(encaisse)
+  $('#vt-cout').textContent     = '−'+eur(cout)
+  $('#vt-benef2').textContent   = (benef>0?'+':'')+eur(benef)
+  show($('#vt-ligne-jojo'), partJM!==0)
+  if(partJM!==0) $('#vt-jojo').textContent = '−'+eur(partJM)
+  $('#vt-part').textContent = eur(benef-partJM)
+
+  // Si le tiroir est ouvert, sa hauteur suit le nouveau contenu.
+  const d = $('#vt-detail')
+  if($('#ventes-total').classList.contains('open')) d.style.height = d.scrollHeight+'px'
 }
 
 function renderVentesRecord(){
@@ -1144,9 +1283,17 @@ function ventesTriees(){
   return r
 }
 
-$('#ventes-total').addEventListener('click', ()=>{
+// La pastille de période garde son rôle ; le reste de la carte ouvre le détail.
+$('#vt-periode').addEventListener('click', (e)=>{
+  e.stopPropagation()
   ventePeriode = ventePeriode==='mois' ? 'tout' : 'mois'
   renderVentesTotal()
+})
+
+$('#ventes-total').addEventListener('click', ()=>{
+  const c = $('#ventes-total'), d = $('#vt-detail')
+  const ouvert = c.classList.toggle('open')
+  d.style.height = ouvert ? d.scrollHeight+'px' : '0px'
 })
 $('#ventes-sort').addEventListener('click', e=>{
   const b = e.target.closest('.sortbtn'); if(!b) return

@@ -182,14 +182,14 @@
      apparaître une bande du fond de l'app en bas. */
   #ouv{position:fixed;inset:-120px;z-index:99999;background:#000;opacity:1;overflow:hidden;
     display:flex;align-items:center;justify-content:center;will-change:opacity}
-  #ouv.efface{opacity:0;transition:opacity 1.15s ease-in-out}
+  #ouv.efface{opacity:0;transition:opacity .95s ease-in-out}
   #ouv.fini{display:none}
   #ouv-cadre{position:relative;width:71%;max-width:280px;opacity:0;transform:scale(.975);
     will-change:transform,opacity}
   #ouv.on #ouv-cadre{opacity:1;transform:scale(1.012);
-    transition:opacity 1.5s ease-out,transform 4.5s cubic-bezier(.22,1,.36,1)}
+    transition:opacity 1.25s ease-out,transform 3.6s cubic-bezier(.22,1,.36,1)}
   #ouv.part #ouv-cadre{opacity:0;transform:scale(1.06);
-    transition:opacity 1.25s ease-in,transform 1.5s ease-in}
+    transition:opacity 1s ease-in,transform 1.2s ease-in}
   #ouv-logo{display:block;width:100%;height:auto}
   @media (prefers-reduced-motion:reduce){
     #ouv,#ouv-cadre{transition:none!important;animation:none!important}
@@ -366,16 +366,16 @@
 //  2,3 → 4,3 s   il tient · une lumière traverse le métal
 //  4,3 → 5,5 s   il redescend dans le noir
 //  5,5 → 6,1 s   noir absolu — le silence qui fait le générique
-//  6,1 → 7,2 s   le voile s'efface à son tour : l'app n'apparaît jamais
+//  4,9 → 5,9 s   le voile s'efface à son tour : l'app n'apparaît jamais
 //                derrière un logo encore visible
 // Elle se déroule quoi qu'il arrive : elle masque le chargement et la demande
 // Face ID sans jamais les bloquer (le voile disparaît du flux à la fin).
 ;(function ouverture(){
   const o = document.getElementById('ouv'); if(!o) return
-  setTimeout(()=>o.classList.add('on'), 800)
-  setTimeout(()=>o.classList.add('part'), 4300)     // le logo seul s'en va
-  setTimeout(()=>o.classList.add('efface'), 6100)   // le voile part ensuite, pas avant
-  setTimeout(()=>o.classList.add('fini'), 7400)
+  setTimeout(()=>o.classList.add('on'), 600)
+  setTimeout(()=>o.classList.add('part'), 3400)     // le logo seul s'en va
+  setTimeout(()=>o.classList.add('efface'), 4900)   // le voile part ensuite, pas avant
+  setTimeout(()=>o.classList.add('fini'), 5900)
 })()
 </script>
 

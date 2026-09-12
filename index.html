@@ -203,17 +203,33 @@
      apparaître une bande du fond de l'app en bas. */
   #ouv{position:fixed;inset:-120px;z-index:99999;background:#000;opacity:1;overflow:hidden;
     display:flex;align-items:center;justify-content:center;will-change:opacity}
-  #ouv.efface{opacity:0;transition:opacity .78s ease-in-out}
+  #ouv.efface{opacity:0;transition:opacity 1s ease-in-out}
   #ouv.fini{display:none}
-  #ouv-cadre{position:relative;width:71%;max-width:280px;opacity:0;transform:scale(.975);
+  #ouv-cadre{position:relative;width:71%;max-width:280px;opacity:1;transform:scale(1.05);
     will-change:transform,opacity}
-  #ouv.on #ouv-cadre{opacity:1;transform:scale(1.012);
-    transition:opacity .9s ease-out,transform 2.6s cubic-bezier(.22,1,.36,1)}
-  #ouv.part #ouv-cadre{opacity:0;transform:scale(1.06);
-    transition:opacity .75s ease-in,transform .9s ease-in}
-  #ouv-logo{display:block;width:100%;height:auto}
+  #ouv.on #ouv-cadre{transform:scale(1);
+    transition:transform 3.8s cubic-bezier(.22,1,.36,1)}
+  #ouv.part #ouv-cadre{opacity:0;transform:scale(1.05);
+    transition:opacity 1.1s ease-in,transform 1.4s ease-in}
+  #ouv-logo{display:block;width:100%;height:auto;opacity:0}
+  /* Le même logo poussé à brightness(7) : le noir reste noir, le chrome part
+     en blanc. C'est l'image elle-même qui fait le bloom, rien n'est dessiné.
+     On n'anime que son opacité — le filtre, lui, est calculé une seule fois. */
+  #ouv-bloom{position:absolute;top:0;left:0;width:100%;height:auto;opacity:1;
+    filter:brightness(7) saturate(0) blur(9px);pointer-events:none;will-change:opacity}
+  /* Une raie de lumière qui s'ouvre du centre à l'instant zéro, puis se dissout. */
+  #ouv-raie{position:absolute;top:50%;left:-8%;width:116%;height:2px;margin-top:-1px;
+    background:linear-gradient(90deg,transparent,#fff 18%,#fff 82%,transparent);
+    box-shadow:0 0 22px 6px rgba(255,255,255,.55);
+    transform:scaleX(.04);opacity:1;pointer-events:none;will-change:transform,opacity}
+  #ouv.on #ouv-logo{opacity:1;transition:opacity 1.5s ease-out .25s}
+  #ouv.on #ouv-bloom{opacity:0;transition:opacity 2s cubic-bezier(.3,0,.3,1)}
+  #ouv.on #ouv-raie{transform:scaleX(1);opacity:0;
+    transition:transform 1.1s cubic-bezier(.16,1,.3,1),opacity 1s ease-out .2s}
   @media (prefers-reduced-motion:reduce){
-    #ouv,#ouv-cadre{transition:none!important;animation:none!important}
+    #ouv,#ouv-cadre,#ouv-bloom,#ouv-logo{transition:none!important;animation:none!important}
+    #ouv-bloom,#ouv-raie{display:none}
+    #ouv-logo{opacity:1}
   }
 
   /* ---------- La carte bénéfice des Ventes ---------- */
@@ -378,6 +394,8 @@
 <div id="ouv">
   <div id="ouv-cadre">
     <img id="ouv-logo" src="logo.png.jpeg" alt="" onerror="this.style.display='none'">
+    <img id="ouv-bloom" src="logo.png.jpeg" alt="" aria-hidden="true">
+    <div id="ouv-raie"></div>
   </div>
 </div>
 <script>
@@ -387,7 +405,7 @@
 //  2,3 → 4,3 s   il tient · une lumière traverse le métal
 //  4,3 → 5,5 s   il redescend dans le noir
 //  5,5 → 6,1 s   noir absolu — le silence qui fait le générique
-//  3,35 → 4,15 s le voile s'efface à son tour : l'app n'apparaît jamais
+//  4,9 → 6,0 s   le voile s'efface à son tour : l'app n'apparaît jamais
 //                derrière un logo encore visible
 // Elle se déroule quoi qu'il arrive : elle masque le chargement et la demande
 // Face ID sans jamais les bloquer (le voile disparaît du flux à la fin).
@@ -404,10 +422,10 @@
     }
     sessionStorage.setItem('ouv.t', Date.now())
   }catch(_){}
-  setTimeout(()=>o.classList.add('on'), 380)
-  setTimeout(()=>o.classList.add('part'), 2350)     // le logo seul s'en va
-  setTimeout(()=>o.classList.add('efface'), 3350)   // le voile part ensuite, pas avant
-  setTimeout(()=>o.classList.add('fini'), 4150)
+  setTimeout(()=>o.classList.add('on'), 90)
+  setTimeout(()=>o.classList.add('part'), 3600)     // le logo seul s'en va
+  setTimeout(()=>o.classList.add('efface'), 4900)   // le voile part ensuite, pas avant
+  setTimeout(()=>o.classList.add('fini'), 6000)
 })()
 </script>
 

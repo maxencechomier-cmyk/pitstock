@@ -218,7 +218,10 @@
     100%{opacity:1;transform:translate3d(0,0,0) scale(1.014)}
   }
   /* après la naissance il continue d'avancer d'un cheveu, très lentement */
-  #ouv.pose #ouv-cadre{transform:translate3d(0,0,0) scale(1);
+  /* animation:none est indispensable : tant que l'animation d'entrée tourne,
+     elle garde la main sur l'opacité et l'ordre de faire disparaître le logo
+     est purement ignoré. On la relâche ici, une fois la naissance finie. */
+  #ouv.pose #ouv-cadre{animation:none;opacity:1;transform:translate3d(0,0,0) scale(1);
     transition:transform 2.6s cubic-bezier(.18,.72,.15,1)}
   #ouv.part #ouv-cadre{opacity:0;transform:translate3d(0,0,0) scale(1.03);
     transition:opacity 1.1s cubic-bezier(.4,0,.6,1),transform 1.4s cubic-bezier(.4,0,.6,1)}
@@ -398,10 +401,11 @@
 // ══ L'ouverture ════════════════════════════════════════════════════════
 //  0 → 2,45 s    quatre flashs de plus en plus longs, puis un fondu blanc de
 //                700 ms qui s'éteint en découvrant le logo
-//  2,45 → 3,9 s  le logo tient et avance d'un cheveu
-//  3,9 → 5,0 s   le logo SEUL redescend dans le noir (le voile reste opaque)
-//  5,0 → 6,1 s   le voile s'efface à son tour : l'app n'apparaît jamais
-//                derrière un logo encore visible
+//  2,45 → 4,8 s  le logo tient, longuement, et avance d'un cheveu
+//  4,8 → 5,9 s   le logo SEUL redescend dans le noir (le voile reste opaque)
+//  5,9 → 6,45 s  NOIR ABSOLU, un demi-temps de silence : l'écran est vide
+//                avant que l'app arrive, jamais l'un par-dessus l'autre
+//  6,45 → 7,6 s  le voile s'efface à son tour, l'app monte
 // Elle se déroule quoi qu'il arrive : elle masque le chargement et la demande
 // Face ID sans jamais les bloquer (le voile disparaît du flux à la fin).
 ;(function ouverture(){
@@ -416,9 +420,9 @@
   // animations démarrent donc du bon état et ne sautent pas leur première image.
   requestAnimationFrame(()=>requestAnimationFrame(()=>o.classList.add('go')))
   setTimeout(()=>o.classList.add('pose'), 2450)
-  setTimeout(()=>o.classList.add('part'), 3900)
-  setTimeout(()=>o.classList.add('efface'), 5000)
-  setTimeout(()=>o.classList.add('fini'), 6100)
+  setTimeout(()=>o.classList.add('part'), 4800)
+  setTimeout(()=>o.classList.add('efface'), 6450)
+  setTimeout(()=>o.classList.add('fini'), 7600)
 })()
 </script>
 

@@ -56,25 +56,34 @@
   .btn svg{width:20px;height:20px}
 
 
-  /* ── Boutons d'entrée « touche de pompe » — pixel art, validés le 16/09 ──
-     Tout est dessiné en SVG sur une grille d'unités entières : aucune image,
-     net à n'importe quelle taille. */
+  /* ── Boutons d'entrée « touche de pompe » — dessin validé le 16/09 ──
+     Le rapport 52×28 est imposé par un padding en pourcentage, toujours
+     calculé sur la largeur du cadre. La hauteur ne dépend donc JAMAIS d'un
+     calcul du navigateur : c'est ce qui manquait la première fois, Safari
+     rendait le dessin à hauteur zéro et les deux boutons disparaissaient.
+     Les deux classes d'état s'appellent pix-bas et pix-bat, et surtout PAS
+     « flash » : ce nom est déjà pris plus bas par le bandeau de confirmation,
+     qui est en position:fixed — le bouton sautait à l'autre bout de l'écran
+     au moindre appui. Toute classe ajoutée ici doit garder le préfixe pix-. */
   .pixrow{display:flex;gap:12px;align-items:flex-start}
-  .pixbtn{flex:1 1 0;min-width:0;display:block;border:0;background:none;padding:0;cursor:pointer;
-    height:92px;line-height:0;user-select:none;-webkit-user-select:none;
+  .pixcase{position:relative;flex:1 1 0;min-width:0}
+  .pixratio{position:relative;height:0;padding-top:53.846%}
+  .pixbtn{position:absolute;top:0;right:0;bottom:0;left:0;
+    margin:0;padding:0;border:0;background:none;cursor:pointer;line-height:0;
+    user-select:none;-webkit-user-select:none;
     filter:drop-shadow(0 6px 11px rgba(0,0,0,.6))}
-  @supports (aspect-ratio:52/28){ .pixbtn{height:auto;aspect-ratio:52/28} }
-  .pixbtn svg{display:block;shape-rendering:crispEdges;width:100%;height:100%}
+  .pixbtn svg{display:block;width:100%;height:100%;shape-rendering:crispEdges}
   .pixbtn .cap{transition:transform .07s cubic-bezier(.4,0,.6,1)}
-  .pixbtn.enfonce .cap{transform:translateY(5px)}
+  .pixbtn.pix-bas .cap{transform:translateY(5px)}
   /* la diode témoin : trois battements secs, comme une pompe qui valide */
-  .pixbtn.flash .diode{animation:pix-diode .34s steps(1,end)}
+  .pixbtn.pix-bat .diode{animation:pix-diode .34s steps(1,end)}
   @keyframes pix-diode{
     0%{opacity:.12} 22%{opacity:1} 44%{opacity:.12} 66%{opacity:1} 88%{opacity:.12} 100%{opacity:1}}
-  /* le commutateur qui déclenche le petit clic haptique d'iOS — invisible */
-  .hapt{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;appearance:none}
+  /* le commutateur du clic haptique d'iOS — invisible, jamais cliquable */
+  .hapt{position:absolute;left:0;bottom:0;width:1px;height:1px;opacity:0;
+    pointer-events:none;appearance:none;-webkit-appearance:none}
   @media (prefers-reduced-motion:reduce){
-    .pixbtn .cap{transition:none} .pixbtn.flash .diode{animation:none}}
+    .pixbtn .cap{transition:none} .pixbtn.pix-bat .diode{animation:none}}
 
   .linkish{background:none;border:0;color:var(--muted);font-size:14px;padding:8px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
   .center{text-align:center}
@@ -1864,7 +1873,10 @@ function openAdd(m){
   $('#cars-next').textContent = m==='achat' ? 'Continuer' : 'Continuer'
   view('add')
 }
-// ── Boutons d'entrée « touche de pompe » (validés le 16/09) ──
+// ── Boutons d'entrée « touche de pompe » — dessin validé le 16/09 ──
+// Tout est en SVG sur une grille d'unités entières : aucune image, aucune
+// police à télécharger, net à n'importe quelle taille.
+
 // Silhouette aux coins taillés en escalier, comme dans un jeu 8 bits.
 function pixSil(x,y,w,h){
   return `M${x+2},${y} H${x+w-2} V${y+1} H${x+w-1} V${y+2} H${x+w} V${y+h-2}`
@@ -1876,7 +1888,7 @@ const PIX_TEINTES = {
   vente:{vif:'#12a066',clair:'#5fe0a8'}
 }
 // Fonte pixel maison, 5x7 — sept lettres suffisent pour ACHAT et VENTE.
-// Dessinée ici plutôt que téléchargée : zéro dépendance, et le rendu est
+// Dessinée ici plutôt que téléchargée : zéro dépendance, et le rendu reste
 // identique partout, même sans réseau.
 const PIX_FONTE = {
   A:['01110','10001','10001','11111','10001','10001','10001'],
@@ -1907,93 +1919,117 @@ function pixMot(mot,x0,y0){
   }
   return d
 }
-
+// Une touche = un cadre qui tient le rapport, le bouton dessiné par-dessus,
+// et le commutateur invisible qui déclenche le petit clic haptique d'iOS.
 function boutonPompe(libelle,teinte,id){
   const c=PIX_TEINTES[teinte], L=52, H=28, CAP=22, prof=5
+  const tx=Math.round((L-(libelle.length*6-1))/2)
   return `
-<button class="pixbtn" id="${id}" type="button" aria-label="${libelle}">
-  <svg viewBox="0 0 ${L} ${H}" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <clipPath id="ps-${id}"><path d="${pixSil(1,prof+1,L-2,H-prof-2)}"/></clipPath>
-      <clipPath id="pc-${id}"><path d="${pixSil(3,1,L-6,CAP-2)}"/></clipPath>
-    </defs>
-    <path d="${pixSil(0,prof,L,H-prof)}" fill="#0c0f14"/>
-    <g clip-path="url(#ps-${id})">
-      <rect x="0" y="${prof+1}"  width="${L}" height="2"  fill="#525b68"/>
-      <rect x="0" y="${prof+3}"  width="${L}" height="13" fill="#383f4a"/>
-      <rect x="0" y="${prof+16}" width="${L}" height="8"  fill="#39404b"/>
-      <rect x="0" y="${CAP}"      width="${L}" height="1"  fill="#5d6776"/>
-      <rect x="0" y="${CAP+3}"    width="${L}" height="3"  fill="#272d36"/>
-    </g>
-    <g class="cap">
-      <path d="${pixSil(2,0,L-4,CAP)}" fill="#0c0f14"/>
-      <g clip-path="url(#pc-${id})">
-        <rect x="0" y="1"  width="${L}" height="4"  fill="${c.vif}"/>
-        <rect x="3" y="1"  width="${L-6}" height="1" fill="${c.clair}"/>
-        <rect x="0" y="5"  width="${L}" height="3"  fill="#f2f5f8"/>
-        <rect x="0" y="8"  width="${L}" height="8"  fill="#dbe1e8"/>
-        <rect x="0" y="16" width="${L}" height="4"  fill="#b6bfca"/>
-        <rect x="3" y="5"  width="1" height="15" fill="#ffffff" opacity=".7"/>
-        <g class="diode">
-          <rect x="${L-9}" y="15" width="4" height="4" fill="${c.vif}" opacity=".26"/>
-          <rect x="${L-8}" y="16" width="2" height="2" fill="${c.vif}"/>
+<div class="pixcase">
+  <div class="pixratio">
+    <button class="pixbtn" id="${id}" type="button" aria-label="${libelle}">
+      <svg viewBox="0 0 ${L} ${H}" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <clipPath id="ps-${id}"><path d="${pixSil(1,prof+1,L-2,H-prof-2)}"/></clipPath>
+          <clipPath id="pc-${id}"><path d="${pixSil(3,1,L-6,CAP-2)}"/></clipPath>
+        </defs>
+        <path d="${pixSil(0,prof,L,H-prof)}" fill="#0c0f14"/>
+        <g clip-path="url(#ps-${id})">
+          <rect x="0" y="${prof+1}"  width="${L}" height="2"  fill="#525b68"/>
+          <rect x="0" y="${prof+3}"  width="${L}" height="13" fill="#383f4a"/>
+          <rect x="0" y="${prof+16}" width="${L}" height="8"  fill="#242932"/>
         </g>
-      </g>
-      <path d="${pixMot(libelle, Math.round((L - (libelle.length*6-1))/2), 8)}" fill="#ffffff"
-            opacity=".5" transform="translate(0,1)"/>
-      <path d="${pixMot(libelle, Math.round((L - (libelle.length*6-1))/2), 8)}" fill="#1b232e"/>
-    </g>
-  </svg>
-</button>
-<input class="hapt" id="hapt-${id}" type="checkbox" switch tabindex="-1" aria-hidden="true">`
+        <g class="cap">
+          <path d="${pixSil(2,0,L-4,CAP)}" fill="#0c0f14"/>
+          <g clip-path="url(#pc-${id})">
+            <rect x="0" y="1"  width="${L}"   height="4"  fill="${c.vif}"/>
+            <rect x="3" y="1"  width="${L-6}" height="1"  fill="${c.clair}"/>
+            <rect x="0" y="5"  width="${L}"   height="3"  fill="#f2f5f8"/>
+            <rect x="0" y="8"  width="${L}"   height="8"  fill="#dbe1e8"/>
+            <rect x="0" y="16" width="${L}"   height="4"  fill="#b6bfca"/>
+            <rect x="3" y="5"  width="1"      height="15" fill="#ffffff" opacity=".7"/>
+            <g class="diode">
+              <rect x="${L-9}" y="15" width="4" height="4" fill="${c.vif}" opacity=".28"/>
+              <rect x="${L-8}" y="16" width="2" height="2" fill="${c.vif}"/>
+            </g>
+          </g>
+          <path d="${pixMot(libelle,tx,8)}" fill="#1b232e"/>
+        </g>
+      </svg>
+    </button>
+  </div>
+  <input class="hapt" id="hapt-${id}" type="checkbox" switch tabindex="-1" aria-hidden="true">
+</div>`
 }
-// Enfoncement, diode et haptique partent au contact du doigt, pas au relâchement :
-// c'est ce décalage qui donne la sensation d'un vrai bouton.
+// L'enfoncement, la diode et le clic haptique partent au CONTACT du doigt,
+// pas au relâchement : c'est ce décalage qui donne la sensation d'un vrai bouton.
 function brancherPompe(btn,action){
   const clic=document.getElementById('hapt-'+btn.id)
   let tenu=false
-  btn.addEventListener('pointerdown', ()=>{
+  // Le doigt est-il encore sur la touche ?
+  const dedans = ev => {
+    const b=btn.getBoundingClientRect()
+    return ev.clientX>=b.left && ev.clientX<=b.right && ev.clientY>=b.top && ev.clientY<=b.bottom
+  }
+  btn.addEventListener('pointerdown', ev=>{
     if(tenu) return
     tenu=true
-    btn.classList.add('enfonce')
-    btn.classList.remove('flash'); void btn.offsetWidth; btn.classList.add('flash')
+    // On accroche le doigt au bouton jusqu'au relâchement. Sans ça, le dessin
+    // qui descend de 5 px glisse sous le doigt, le navigateur croit qu'on est
+    // sorti du bouton et annule l'appui aussitôt (constaté en test).
+    try{ btn.setPointerCapture(ev.pointerId) }catch(e){}
+    btn.classList.add('pix-bas')
+    btn.classList.remove('pix-bat'); void btn.offsetWidth; btn.classList.add('pix-bat')
     if(clic) clic.checked=!clic.checked           // iOS 17.4+ : petit clic système
     if(navigator.vibrate) navigator.vibrate(8)    // Android
   })
-  const relacher = declencher => {
+  // Le doigt glisse hors de la touche : elle remonte, et rien ne partira.
+  btn.addEventListener('pointermove', ev=>{
+    if(tenu) btn.classList.toggle('pix-bas', dedans(ev))
+  })
+  const relacher = (ev,declencher) => {
     if(!tenu) return
     tenu=false
-    btn.classList.remove('enfonce')
-    if(declencher && action) action()
+    btn.classList.remove('pix-bas')
+    try{ btn.releasePointerCapture(ev.pointerId) }catch(e){}
+    if(declencher && action && dedans(ev)) action()
   }
-  btn.addEventListener('pointerup', ()=>relacher(true))
-  btn.addEventListener('pointerleave', ()=>relacher(false))
-  btn.addEventListener('pointercancel', ()=>relacher(false))
+  btn.addEventListener('pointerup', ev=>relacher(ev,true))
+  btn.addEventListener('pointercancel', ev=>relacher(ev,false))
 }
 // Repli : deux boutons ordinaires, qui marchent sans aucun dessin.
-function boutonsSecours(){
-  $('#entree-boutons').innerHTML =
+// Il ne peut jamais échouer à son tour — sinon il emporterait avec lui
+// tout le code qui suit, et l'app entière deviendrait inutilisable.
+function boutonsSecours(hote){
+  if(!hote) return
+  hote.innerHTML =
     '<button class="btn" id="btn-achat" style="flex:1">Achat</button>' +
     '<button class="btn" id="btn-vente" style="flex:1">Vente</button>'
-  $('#btn-achat').addEventListener('click', ()=>openAdd('achat'))
-  $('#btn-vente').addEventListener('click', ()=>openAdd('vente'))
+  const a=hote.querySelector('#btn-achat'), v=hote.querySelector('#btn-vente')
+  if(a) a.addEventListener('click', ()=>openAdd('achat'))
+  if(v) v.addEventListener('click', ()=>openAdd('vente'))
 }
-try{
-  $('#entree-boutons').innerHTML =
-    boutonPompe('ACHAT','achat','btn-achat') + boutonPompe('VENTE','vente','btn-vente')
-  brancherPompe($('#btn-achat'), ()=>openAdd('achat'))
-  brancherPompe($('#btn-vente'), ()=>openAdd('vente'))
-  // Un tour de boucle plus tard, on mesure ce qui a été réellement rendu.
-  // Si les touches n'ont pas de hauteur, on repasse aux boutons ordinaires :
-  // une app sans bouton d'entrée est une app inutilisable.
-  requestAnimationFrame(()=>{
-    const h = $('#btn-achat') ? $('#btn-achat').getBoundingClientRect().height : 0
-    if(h < 24) boutonsSecours()
-  })
-}catch(e){
-  console.warn('Boutons pixel indisponibles, repli :', e)
-  boutonsSecours()
+function monterBoutonsEntree(){
+  const hote=$('#entree-boutons')
+  if(!hote) return
+  try{
+    hote.innerHTML = boutonPompe('ACHAT','achat','btn-achat') + boutonPompe('VENTE','vente','btn-vente')
+    const a=$('#btn-achat'), v=$('#btn-vente')
+    if(!a || !v) throw new Error('touches non rendues')
+    brancherPompe(a, ()=>openAdd('achat'))
+    brancherPompe(v, ()=>openAdd('vente'))
+    // Un tour de boucle plus tard, on mesure ce qui a RÉELLEMENT été rendu :
+    // sous 24 px de haut, le dessin n'est pas passé et on repasse au repli.
+    requestAnimationFrame(()=>{
+      try{ if(a.getBoundingClientRect().height < 24) boutonsSecours(hote) }
+      catch(err){ boutonsSecours(hote) }
+    })
+  }catch(err){
+    console.warn('Touches de pompe indisponibles, repli :', err)
+    try{ boutonsSecours(hote) }catch(e2){}
+  }
 }
+monterBoutonsEntree()
 // Retour = revenir à l'écran juste avant, pas directement à l'accueil (bug remonté par Max) :
 // depuis l'étape 2 (montant total), un tap revient à l'étape 1 (liste des voitures) ;
 // c'est seulement depuis l'étape 1 qu'un tap referme le parcours et revient à l'app.

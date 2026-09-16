@@ -55,9 +55,26 @@
   .btn:disabled{opacity:.55;cursor:default}
   .btn svg{width:20px;height:20px}
 
-  /* Boutons d'entrée Achat / Vente — le signal visuel du parcours (§2 refonte) */
-  .btn.achat{background:linear-gradient(180deg,var(--accent),var(--accent2));box-shadow:0 10px 26px -10px rgba(255,140,20,.75)}
-  .btn.vente{background:linear-gradient(180deg,#4fe0ac,var(--good));color:#04150e;box-shadow:0 10px 26px -10px rgba(58,209,154,.65)}
+
+  /* ── Boutons d'entrée « touche de pompe » — pixel art, validés le 16/09 ──
+     Tout est dessiné en SVG sur une grille d'unités entières : aucune image,
+     net à n'importe quelle taille. */
+  .pixrow{display:flex;gap:12px;align-items:flex-start}
+  .pixbtn{flex:1 1 0;min-width:0;display:block;border:0;background:none;padding:0;cursor:pointer;
+    height:92px;line-height:0;user-select:none;-webkit-user-select:none;
+    filter:drop-shadow(0 6px 11px rgba(0,0,0,.6))}
+  @supports (aspect-ratio:52/28){ .pixbtn{height:auto;aspect-ratio:52/28} }
+  .pixbtn svg{display:block;shape-rendering:crispEdges;width:100%;height:100%}
+  .pixbtn .cap{transition:transform .07s cubic-bezier(.4,0,.6,1)}
+  .pixbtn.enfonce .cap{transform:translateY(5px)}
+  /* la diode témoin : trois battements secs, comme une pompe qui valide */
+  .pixbtn.flash .diode{animation:pix-diode .34s steps(1,end)}
+  @keyframes pix-diode{
+    0%{opacity:.12} 22%{opacity:1} 44%{opacity:.12} 66%{opacity:1} 88%{opacity:.12} 100%{opacity:1}}
+  /* le commutateur qui déclenche le petit clic haptique d'iOS — invisible */
+  .hapt{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;appearance:none}
+  @media (prefers-reduced-motion:reduce){
+    .pixbtn .cap{transition:none} .pixbtn.flash .diode{animation:none}}
 
   .linkish{background:none;border:0;color:var(--muted);font-size:14px;padding:8px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
   .center{text-align:center}
@@ -153,14 +170,14 @@
   .ch-delta.pos{color:var(--good)} .ch-delta.neg{color:var(--bad)}
   .ch-plot{position:relative;margin:12px -8px 0;touch-action:pan-y;overflow:hidden}
   .ch-plot svg{display:block;width:100%}
-  .ch-paint{opacity:1;transition:opacity .18s ease}
+  .ch-paint{opacity:1;transition:opacity .28s ease}
   .ch-paint.out{opacity:0}
   .ch-scan{position:absolute;top:12px;bottom:20px;left:0;width:46px;pointer-events:none;
     background:linear-gradient(90deg,transparent,rgba(255,255,255,.018) 55%,rgba(255,255,255,.055) 90%,rgba(255,255,255,.10) 99%,transparent);
     border-right:1px solid rgba(255,255,255,.16);
-    animation:ch-scan 4s linear infinite;will-change:transform;backface-visibility:hidden}
+    animation:ch-scan 6.5s linear infinite;will-change:transform;backface-visibility:hidden}
   @keyframes ch-scan{from{transform:translate3d(-50px,0,0)}to{transform:translate3d(var(--plotw,340px),0,0)}}
-  .ch-sweep{animation:ch-sweep .55s cubic-bezier(.32,.72,0,1)}
+  .ch-sweep{animation:ch-sweep .9s cubic-bezier(.22,1,.3,1)}
   @keyframes ch-sweep{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
   .ch-live{animation:ch-live 2.4s ease-in-out infinite alternate}
   @keyframes ch-live{from{opacity:.30}to{opacity:.05}}
@@ -486,10 +503,7 @@
         </div>
 
         <!-- Les 2 boutons d'entrée : le geste rapide, tout de suite visible (§13 principe 2) -->
-        <div class="grid">
-          <button class="btn achat" id="btn-achat" style="grid-column:1/-1">🟠 Achat — une voiture entre</button>
-          <button class="btn vente" id="btn-vente" style="grid-column:1/-1">🟢 Vente — une voiture part</button>
-        </div>
+        <div class="pixrow" id="entree-boutons"></div>
 
         <div class="grid">
           <div class="card"><div class="k">Voitures — Max</div><div class="v" id="kpi-stock-max">—</div></div>
@@ -501,7 +515,7 @@
       <div class="panel hidden" id="tab-stock">
         <div class="paneltitle">Stock</div>
         <div id="stock-list" class="list"></div>
-        <div id="stock-empty" class="empty hidden">Aucune voiture en stock.<br>Touche 🟠 Achat sur l'accueil pour en ajouter une.</div>
+        <div id="stock-empty" class="empty hidden">Aucune voiture en stock.<br>Touche la touche Achat sur l'accueil pour en ajouter une.</div>
       </div>
 
       <!-- VENTES -->
@@ -1503,6 +1517,36 @@ async function loadCharts(){
   chDraw(true); chPill()
 }
 
+// Lissage de courbe, méthode monotone : les segments sont arrondis, mais la
+// courbe ne monte jamais plus haut ni ne descend plus bas que les vrais points.
+// Un graphique d'argent qui inventerait un sommet serait un graphique qui ment.
+function chLisse(P){
+  const n = P.length
+  if(n === 0) return ''
+  if(n === 1) return 'M'+P[0].x.toFixed(1)+','+P[0].y.toFixed(1)
+  const dx = [], pente = []
+  for(let i=0;i<n-1;i++){
+    dx[i] = P[i+1].x - P[i].x
+    pente[i] = dx[i] > 0 ? (P[i+1].y - P[i].y) / dx[i] : 0
+  }
+  const m = new Array(n)
+  m[0] = pente[0]; m[n-1] = pente[n-2]
+  for(let i=1;i<n-1;i++){
+    if(pente[i-1] * pente[i] <= 0){ m[i] = 0; continue }   // sommet : tangente plate
+    const w1 = 2*dx[i] + dx[i-1], w2 = dx[i] + 2*dx[i-1]
+    m[i] = (w1 + w2) / (w1/pente[i-1] + w2/pente[i])       // moyenne harmonique pondérée
+  }
+  let d = 'M'+P[0].x.toFixed(1)+','+P[0].y.toFixed(1)
+  for(let i=0;i<n-1;i++){
+    if(!(dx[i] > 0)){ d += 'L'+P[i+1].x.toFixed(1)+','+P[i+1].y.toFixed(1); continue }
+    const h = dx[i]/3
+    d += 'C'+(P[i].x+h).toFixed(1)+','+(P[i].y+m[i]*h).toFixed(1)
+       + ' '+(P[i+1].x-h).toFixed(1)+','+(P[i+1].y-m[i+1]*h).toFixed(1)
+       + ' '+P[i+1].x.toFixed(1)+','+P[i+1].y.toFixed(1)
+  }
+  return d
+}
+
 function chDraw(sweep){
   const m = CH_META[chMode]
   $('#ch-title').textContent = m.title
@@ -1553,10 +1597,11 @@ function chDraw(sweep){
     lab  += '<text x="'+(W-8)+'" y="'+(+y+3.5)+'" text-anchor="end" font-size="9.5" font-weight="600" letter-spacing=".6" fill="rgba(255,255,255,.26)">'+Math.round(v)+'</text>'
   }
 
-  const ligne = s => s.pts.map(p => X(p.t).toFixed(1)+','+Y(p.y).toFixed(1)).join(' ')
-  const aire  = s => 'M'+X(s.pts[0].t).toFixed(1)+','+Y(Math.max(yMin,0)).toFixed(1)
-                    +'L'+ligne(s).split(' ').join('L')
-                    +'L'+X(s.pts[s.pts.length-1].t).toFixed(1)+','+Y(Math.max(yMin,0)).toFixed(1)+'Z'
+  const base   = Y(Math.max(yMin,0)).toFixed(1)
+  const chemin = s => chLisse(s.pts.map(p => ({ x:+X(p.t).toFixed(2), y:+Y(p.y).toFixed(2) })))
+  const aire   = s => chemin(s)
+                    +'L'+X(s.pts[s.pts.length-1].t).toFixed(1)+','+base
+                    +'L'+X(s.pts[0].t).toFixed(1)+','+base+'Z'
   const defs = series.map(s => '<linearGradient id="chg-'+s.k+'" x1="0" y1="0" x2="0" y2="1">'
     +'<stop offset="0%" stop-color="'+s.col+'" stop-opacity=".16"/>'
     +'<stop offset="100%" stop-color="'+s.col+'" stop-opacity="0"/></linearGradient>').join('')
@@ -1565,7 +1610,7 @@ function chDraw(sweep){
   const ordre = [series[1], series[0]]
   const aires  = ordre.map(s => '<path d="'+aire(s)+'" fill="url(#chg-'+s.k+')"/>').join('')
   const traits = ordre.map(s => { const big = s.k==='max'
-    return '<polyline points="'+ligne(s)+'" fill="none" stroke="'+s.col+'" stroke-width="'+(big?2.2:1.6)+'"'
+    return '<path d="'+chemin(s)+'" fill="none" stroke="'+s.col+'" stroke-width="'+(big?2.2:1.6)+'"'
       +' stroke-linejoin="round" stroke-linecap="round" style="filter:drop-shadow(0 0 '+(big?7:5)+'px '+s.col+(big?'b0':'80')+')"/>' }).join('')
   const bouts = series.map(s=>{ const p = s.pts[s.pts.length-1], x = X(p.t).toFixed(1), y = Y(p.y).toFixed(1)
     return '<circle class="ch-live" cx="'+x+'" cy="'+y+'" r="9" fill="'+s.col+'"/>'
@@ -1819,8 +1864,136 @@ function openAdd(m){
   $('#cars-next').textContent = m==='achat' ? 'Continuer' : 'Continuer'
   view('add')
 }
-$('#btn-achat').addEventListener('click', ()=>openAdd('achat'))
-$('#btn-vente').addEventListener('click', ()=>openAdd('vente'))
+// ── Boutons d'entrée « touche de pompe » (validés le 16/09) ──
+// Silhouette aux coins taillés en escalier, comme dans un jeu 8 bits.
+function pixSil(x,y,w,h){
+  return `M${x+2},${y} H${x+w-2} V${y+1} H${x+w-1} V${y+2} H${x+w} V${y+h-2}`
+       + ` H${x+w-1} V${y+h-1} H${x+w-2} V${y+h} H${x+2} V${y+h-1} H${x+1}`
+       + ` V${y+h-2} H${x} V${y+2} H${x+1} V${y+1} H${x+2} Z`
+}
+const PIX_TEINTES = {
+  achat:{vif:'#e0402a',clair:'#ff8b74'},
+  vente:{vif:'#12a066',clair:'#5fe0a8'}
+}
+// Fonte pixel maison, 5x7 — sept lettres suffisent pour ACHAT et VENTE.
+// Dessinée ici plutôt que téléchargée : zéro dépendance, et le rendu est
+// identique partout, même sans réseau.
+const PIX_FONTE = {
+  A:['01110','10001','10001','11111','10001','10001','10001'],
+  C:['01110','10001','10000','10000','10000','10001','01110'],
+  H:['10001','10001','10001','11111','10001','10001','10001'],
+  T:['11111','00100','00100','00100','00100','00100','00100'],
+  V:['10001','10001','10001','10001','10001','01010','00100'],
+  E:['11111','10000','10000','11110','10000','10000','11111'],
+  N:['10001','11001','11001','10101','10011','10011','10001']
+}
+// Chaque ligne de pixels allumés devient un segment de chemin : peu d'éléments,
+// des bords nets, et la lettre reste sur la grille entière.
+function pixMot(mot,x0,y0){
+  let d=''
+  for(let i=0;i<mot.length;i++){
+    const g=PIX_FONTE[mot[i]]; if(!g) continue
+    const bx=x0+i*6
+    for(let l=0;l<7;l++){
+      let c=0
+      while(c<5){
+        if(g[l][c]==='1'){
+          let f=c; while(f<5 && g[l][f]==='1') f++
+          d+=`M${bx+c},${y0+l} h${f-c} v1 h-${f-c} z`
+          c=f
+        } else c++
+      }
+    }
+  }
+  return d
+}
+
+function boutonPompe(libelle,teinte,id){
+  const c=PIX_TEINTES[teinte], L=52, H=28, CAP=22, prof=5
+  return `
+<button class="pixbtn" id="${id}" type="button" aria-label="${libelle}">
+  <svg viewBox="0 0 ${L} ${H}" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <clipPath id="ps-${id}"><path d="${pixSil(1,prof+1,L-2,H-prof-2)}"/></clipPath>
+      <clipPath id="pc-${id}"><path d="${pixSil(3,1,L-6,CAP-2)}"/></clipPath>
+    </defs>
+    <path d="${pixSil(0,prof,L,H-prof)}" fill="#0c0f14"/>
+    <g clip-path="url(#ps-${id})">
+      <rect x="0" y="${prof+1}"  width="${L}" height="2"  fill="#525b68"/>
+      <rect x="0" y="${prof+3}"  width="${L}" height="13" fill="#383f4a"/>
+      <rect x="0" y="${prof+16}" width="${L}" height="8"  fill="#39404b"/>
+      <rect x="0" y="${CAP}"      width="${L}" height="1"  fill="#5d6776"/>
+      <rect x="0" y="${CAP+3}"    width="${L}" height="3"  fill="#272d36"/>
+    </g>
+    <g class="cap">
+      <path d="${pixSil(2,0,L-4,CAP)}" fill="#0c0f14"/>
+      <g clip-path="url(#pc-${id})">
+        <rect x="0" y="1"  width="${L}" height="4"  fill="${c.vif}"/>
+        <rect x="3" y="1"  width="${L-6}" height="1" fill="${c.clair}"/>
+        <rect x="0" y="5"  width="${L}" height="3"  fill="#f2f5f8"/>
+        <rect x="0" y="8"  width="${L}" height="8"  fill="#dbe1e8"/>
+        <rect x="0" y="16" width="${L}" height="4"  fill="#b6bfca"/>
+        <rect x="3" y="5"  width="1" height="15" fill="#ffffff" opacity=".7"/>
+        <g class="diode">
+          <rect x="${L-9}" y="15" width="4" height="4" fill="${c.vif}" opacity=".26"/>
+          <rect x="${L-8}" y="16" width="2" height="2" fill="${c.vif}"/>
+        </g>
+      </g>
+      <path d="${pixMot(libelle, Math.round((L - (libelle.length*6-1))/2), 8)}" fill="#ffffff"
+            opacity=".5" transform="translate(0,1)"/>
+      <path d="${pixMot(libelle, Math.round((L - (libelle.length*6-1))/2), 8)}" fill="#1b232e"/>
+    </g>
+  </svg>
+</button>
+<input class="hapt" id="hapt-${id}" type="checkbox" switch tabindex="-1" aria-hidden="true">`
+}
+// Enfoncement, diode et haptique partent au contact du doigt, pas au relâchement :
+// c'est ce décalage qui donne la sensation d'un vrai bouton.
+function brancherPompe(btn,action){
+  const clic=document.getElementById('hapt-'+btn.id)
+  let tenu=false
+  btn.addEventListener('pointerdown', ()=>{
+    if(tenu) return
+    tenu=true
+    btn.classList.add('enfonce')
+    btn.classList.remove('flash'); void btn.offsetWidth; btn.classList.add('flash')
+    if(clic) clic.checked=!clic.checked           // iOS 17.4+ : petit clic système
+    if(navigator.vibrate) navigator.vibrate(8)    // Android
+  })
+  const relacher = declencher => {
+    if(!tenu) return
+    tenu=false
+    btn.classList.remove('enfonce')
+    if(declencher && action) action()
+  }
+  btn.addEventListener('pointerup', ()=>relacher(true))
+  btn.addEventListener('pointerleave', ()=>relacher(false))
+  btn.addEventListener('pointercancel', ()=>relacher(false))
+}
+// Repli : deux boutons ordinaires, qui marchent sans aucun dessin.
+function boutonsSecours(){
+  $('#entree-boutons').innerHTML =
+    '<button class="btn" id="btn-achat" style="flex:1">Achat</button>' +
+    '<button class="btn" id="btn-vente" style="flex:1">Vente</button>'
+  $('#btn-achat').addEventListener('click', ()=>openAdd('achat'))
+  $('#btn-vente').addEventListener('click', ()=>openAdd('vente'))
+}
+try{
+  $('#entree-boutons').innerHTML =
+    boutonPompe('ACHAT','achat','btn-achat') + boutonPompe('VENTE','vente','btn-vente')
+  brancherPompe($('#btn-achat'), ()=>openAdd('achat'))
+  brancherPompe($('#btn-vente'), ()=>openAdd('vente'))
+  // Un tour de boucle plus tard, on mesure ce qui a été réellement rendu.
+  // Si les touches n'ont pas de hauteur, on repasse aux boutons ordinaires :
+  // une app sans bouton d'entrée est une app inutilisable.
+  requestAnimationFrame(()=>{
+    const h = $('#btn-achat') ? $('#btn-achat').getBoundingClientRect().height : 0
+    if(h < 24) boutonsSecours()
+  })
+}catch(e){
+  console.warn('Boutons pixel indisponibles, repli :', e)
+  boutonsSecours()
+}
 // Retour = revenir à l'écran juste avant, pas directement à l'accueil (bug remonté par Max) :
 // depuis l'étape 2 (montant total), un tap revient à l'étape 1 (liste des voitures) ;
 // c'est seulement depuis l'étape 1 qu'un tap referme le parcours et revient à l'app.

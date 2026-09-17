@@ -433,7 +433,12 @@
   #acc-veil{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;background:
     linear-gradient(180deg,rgba(6,6,8,.55) 0%,rgba(6,6,8,.10) 22%,rgba(6,6,8,0) 44%,rgba(6,6,8,.55) 74%,rgba(6,6,8,.95) 100%)}
   #acc-neige{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none}
-  .acc-wrap{--acc-barre:calc(86px + env(safe-area-inset-bottom) * .55)}
+  /* Le decor s'ancre sur la barre d'onglets DESSINEE (86 px), pas sur la zone
+     de securite : celle-ci est deja absorbee par le padding bas de la barre
+     elle-meme. En l'ajoutant ici, tout le bloc bas — prix, compteur, touches —
+     remontait de 19 px sur l'iPhone de Max et ne correspondait plus a la
+     maquette validee. Meme valeur que le --barre de la maquette. */
+  .acc-wrap{--acc-barre:86px}
 
   /* ── Les trois prix, en bandeau bas : Tresorerie au milieu ── */
   .acc-prix{position:absolute;left:0;right:0;bottom:calc(var(--acc-barre) + 248px);z-index:3;
@@ -479,7 +484,11 @@
      Seules les deux touches elles-memes recoivent le doigt. */
   #tab-accueil .pixrow{position:absolute;left:0;right:0;bottom:calc(var(--acc-barre) + 13px);
     z-index:4;padding:0 8px;gap:0;justify-content:space-between;pointer-events:none}
-  #tab-accueil .pixcase{flex:0 0 114px;pointer-events:auto}
+  #tab-accueil .pixcase{flex:0 0 114px}
+  /* pointer-events est HERITE : mettre "auto" sur .pixcase seulement laissait
+     les boutons de repli (qui ne sont pas des .pixcase) totalement morts au
+     toucher. On le remet sur TOUT enfant direct de la rangee. */
+  #tab-accueil .pixrow>*{pointer-events:auto}
 
   /* Sur l'accueil, la barre du haut s'efface : les trois chiffres sont deja
      dans le decor, en plus gros. Deux fois le meme chiffre, c'est un de trop. */
@@ -1150,7 +1159,8 @@ function switchTab(name){
   // neige ne tourne que la.
   const surAccueil = name==='accueil'
   $('#app').classList.toggle('sur-accueil', surAccueil)
-  if(surAccueil) neigeDemarre(); else neigeArrete()
+  if(surAccueil){ neigeDemarre(); requestAnimationFrame(()=>{ try{ verifierTouches() }catch(e){} }) }
+  else neigeArrete()
   if(name==='stock') loadStock()
   if(name==='ventes') loadVentes()
   if(name==='jojo') loadJojo()
@@ -2118,8 +2128,8 @@ function brancherPompe(btn,action){
 function boutonsSecours(hote){
   if(!hote) return
   hote.innerHTML =
-    '<button class="btn" id="btn-achat" style="flex:1">Achat</button>' +
-    '<button class="btn" id="btn-vente" style="flex:1">Vente</button>'
+    '<button class="btn" id="btn-achat" style="flex:0 0 114px">Achat</button>' +
+    '<button class="btn" id="btn-vente" style="flex:0 0 114px">Vente</button>'
   const a=hote.querySelector('#btn-achat'), v=hote.querySelector('#btn-vente')
   if(a) a.addEventListener('click', ()=>openAdd('achat'))
   if(v) v.addEventListener('click', ()=>openAdd('vente'))
@@ -2133,16 +2143,26 @@ function monterBoutonsEntree(){
     if(!a || !v) throw new Error('touches non rendues')
     brancherPompe(a, ()=>openAdd('achat'))
     brancherPompe(v, ()=>openAdd('vente'))
-    // Un tour de boucle plus tard, on mesure ce qui a RÉELLEMENT été rendu :
-    // sous 24 px de haut, le dessin n'est pas passé et on repasse au repli.
-    requestAnimationFrame(()=>{
-      try{ if(a.getBoundingClientRect().height < 24) boutonsSecours(hote) }
-      catch(err){ boutonsSecours(hote) }
-    })
+    // La mesure ne se fait PAS ici : au chargement, #app est encore caché,
+    // donc la touche mesure 0 et le repli se déclenchait À TOUS LES COUPS —
+    // c'est ce qui faisait disparaître les touches de pompe en production.
+    // Elle se fait dans verifierTouches(), quand l'accueil est vraiment à l'écran.
   }catch(err){
     console.warn('Touches de pompe indisponibles, repli :', err)
     try{ boutonsSecours(hote) }catch(e2){}
   }
+}
+// Mesure ce qui a RÉELLEMENT été rendu, et seulement quand c'est mesurable :
+// une largeur nulle veut dire "pas affiché", pas "raté". On ne bascule au repli
+// que si la touche est bien posée à l'écran ET écrasée sous 24 px de haut.
+function verifierTouches(){
+  const hote=$('#entree-boutons'); if(!hote) return
+  const a=hote.querySelector('#btn-achat')
+  if(!a || !a.classList.contains('pixbtn')) return      // absente, ou déjà en repli
+  try{
+    const b=a.getBoundingClientRect()
+    if(b.width > 0 && b.height < 24) boutonsSecours(hote)
+  }catch(err){ boutonsSecours(hote) }
 }
 monterBoutonsEntree()
 

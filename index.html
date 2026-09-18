@@ -355,7 +355,15 @@
   .sheet{position:fixed;top:0;left:0;right:0;height:100vh;height:100dvh;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;z-index:20;
     backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
   .sheetcard{background:var(--bg2);border:1px solid var(--glass-brd);border-radius:22px 22px 0 0;width:100%;max-width:520px;margin:0 auto;
-    padding:22px 20px max(22px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px}
+    padding:22px 20px max(22px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px;
+    /* Bug 18/09 (titre/description impossibles à atteindre) : la fiche grandissait
+       vers le haut au-delà de l'écran sans jamais défiler. Elle est désormais bornée
+       à la hauteur d'écran et défile pour son propre compte. */
+    max-height:calc(100dvh - max(12px,env(safe-area-inset-top)));
+    overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+  /* Sans ça, dans une colonne flex bornée, les blocs se font ÉCRASER au lieu de
+     déborder (le bloc annonce, en overflow:hidden, tombait à hauteur quasi nulle). */
+  .sheetcard>*{flex-shrink:0}
   .sheetcard .who{display:flex;align-items:center;gap:12px;margin-bottom:4px}
   .avatar{width:38px;height:38px;border-radius:12px;background:linear-gradient(150deg,var(--accent2),var(--accent));
     display:grid;place-items:center;font-weight:800;font-size:15px;color:var(--onaccent)}

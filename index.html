@@ -440,24 +440,37 @@
      maquette validee. Meme valeur que le --barre de la maquette. */
   .acc-wrap{--acc-barre:86px}
 
-  /* ── Les trois prix, en bandeau bas : Tresorerie au milieu ── */
-  .acc-prix{position:absolute;left:0;right:0;bottom:calc(var(--acc-barre) + 248px);z-index:3;
-    display:flex;justify-content:space-between;align-items:flex-end;padding:0 20px;pointer-events:none}
-  .acc-bloc{text-align:center}
-  .acc-tag{font-size:9.5px;letter-spacing:.2em;color:rgba(255,255,255,.42);
-    text-transform:uppercase;margin-bottom:4px}
+  /* ── Les trois prix — dans le CIEL, au-dessus de la station (arc large) ──
+     Choix de Max le 17/09. Deux raisons : l'asphalte reflete les neons, donc un
+     montant pose dessus se lit sur un fond qui bouge (interdit n°1 du §13) ;
+     le ciel est un aplat noir regulier, et le tiers haut cessait d'etre vide.
+     Reperes mesures sur la photo (390x844) : sommet de l'enseigne Shell y=236,
+     toit de l'auvent y=266. Rien ne doit descendre sous y=230. */
+  .acc-prix{position:absolute;top:0;left:0;right:0;bottom:0;z-index:3;pointer-events:none}
+  .acc-bloc{position:absolute;text-align:center}
+  .acc-bloc.c{left:50%;transform:translateX(-50%);width:230px;top:80px}
+  .acc-bloc.g{left:16px;width:120px;top:160px}
+  .acc-bloc.d{right:16px;width:120px;top:160px}
+  .acc-tag{font-size:9px;letter-spacing:.22em;color:rgba(255,255,255,.42);
+    text-transform:uppercase;margin-bottom:3px}
+  .acc-bloc.c .acc-tag{font-size:10px;margin-bottom:5px}
   .acc-line{display:flex;align-items:flex-end;justify-content:center}
-  .acc-line .eur{font:600 11px/1 inherit;color:#f4f7fc;margin:0 0 3px 4px;opacity:.85}
-  .acc-line .pt{width:4px;height:4px;border-radius:1.5px;background:#f4f7fc;margin:0 1.5px 3px}
+  .acc-line .eur{font:600 10px/1 inherit;color:#f4f7fc;margin:0 0 2px 4px;opacity:.85}
+  .acc-line .pt{width:4px;height:4px;border-radius:1.5px;background:#f4f7fc;margin:0 1.5px 2px}
+  .acc-bloc.c .acc-line .eur{font-size:12px;margin:0 0 4px 5px}
+  .acc-bloc.c .acc-line .pt{width:5px;height:5px;margin:0 1.5px 3px}
   .acc-seg{display:flex}
   .acc-seg svg{display:block}
   .acc-on{fill:#f4f7fc}
   .acc-off{fill:rgba(255,255,255,.075)}
 
   /* ── Le compteur ── */
+  /* Monte de 36 px et elargi a 212 px — choix de Max le 17/09. L'interrupteur
+     Moi/JM, loge dans le cadran, remonte avec lui et se pose 18 px au-dessus
+     des touches ; les graduations 0 et 20 cessent d'etre mordues par elles. */
   .acc-gauge{position:absolute;left:50%;transform:translateX(-50%);
-    bottom:calc(var(--acc-barre) + 16px);z-index:3}
-  #acc-dial{display:block;filter:drop-shadow(0 16px 40px rgba(0,0,0,.5))}
+    bottom:calc(var(--acc-barre) + 52px);z-index:3}
+  #acc-dial{display:block;width:212px;height:212px;filter:drop-shadow(0 16px 40px rgba(0,0,0,.5))}
   #acc-ticks{transition:opacity .42s ease}
   .acc-tog{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);
     width:102px;height:26px;border-radius:999px;cursor:pointer;overflow:hidden;z-index:2;
@@ -612,9 +625,9 @@
           <canvas id="acc-neige"></canvas>
 
           <div class="acc-prix">
-            <div class="acc-bloc"><div class="acc-tag">Stock</div><div class="acc-line" id="acc-stk"></div></div>
-            <div class="acc-bloc"><div class="acc-tag">Trésorerie</div><div class="acc-line" id="acc-tres"></div></div>
-            <div class="acc-bloc"><div class="acc-tag">Bénéfice</div><div class="acc-line" id="acc-ben"></div></div>
+            <div class="acc-bloc c"><div class="acc-tag">Trésorerie</div><div class="acc-line" id="acc-tres"></div></div>
+            <div class="acc-bloc g"><div class="acc-tag">Stock</div><div class="acc-line" id="acc-stk"></div></div>
+            <div class="acc-bloc d"><div class="acc-tag">Bénéfice</div><div class="acc-line" id="acc-ben"></div></div>
           </div>
 
           <div class="acc-gauge">
@@ -2270,7 +2283,7 @@ function accDemarreAnim(){ if(!accAnime){ accAnime=true; requestAnimationFrame(a
 
 /* ── Le point d'entree : appele par loadDashboard, jamais ailleurs ── */
 function accueilMaj(d){
-  segAfficher($('#acc-tres'), Number(d.tresorerie||0), 22)
+  segAfficher($('#acc-tres'), Number(d.tresorerie||0), 31)
   segAfficher($('#acc-stk'),  Number(d.stock||0), 16)
   segAfficher($('#acc-ben'),  Number(d.benefice||0), 16)
   ACC.moi=Number(d.voituresMax||0); ACC.jm=Number(d.voituresJm||0)
